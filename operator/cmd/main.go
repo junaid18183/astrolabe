@@ -36,6 +36,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/metrics/filters"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
+
+	astrolabev1 "github.com/junaid18183/astrolabe/api/v1"
 	// +kubebuilder:scaffold:imports
 )
 
@@ -47,6 +49,7 @@ var (
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 
+	utilruntime.Must(astrolabev1.AddToScheme(scheme))
 	// +kubebuilder:scaffold:scheme
 }
 
