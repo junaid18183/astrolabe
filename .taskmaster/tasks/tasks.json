@@ -9,8 +9,54 @@
         "testStrategy": "Verify repository structure, successful build, and CI/CD pipeline execution. Ensure operator framework scaffolding passes initial tests.",
         "priority": "high",
         "dependencies": [],
-        "status": "pending",
-        "subtasks": []
+        "status": "in-progress",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Create and Initialize Git Repository",
+            "description": "Set up a new Git repository to serve as the foundation for the project, ensuring version control from the outset.",
+            "dependencies": [],
+            "details": "Create a new repository on the chosen Git hosting platform (e.g., GitHub, GitLab). Clone the repository locally and initialize it with a README, .gitignore (Go, Kubernetes, and CI/CD patterns), and an initial commit. Set up branch protection rules if required.",
+            "status": "done",
+            "testStrategy": "Verify repository accessibility, correct .gitignore patterns, and ability to push/pull changes."
+          },
+          {
+            "id": 2,
+            "title": "Scaffold Kubernetes Operator Framework",
+            "description": "Generate the base project structure for a Kubernetes operator using Kubebuilder or Operator SDK (Go preferred).",
+            "dependencies": [],
+            "details": "Use either Kubebuilder or Operator SDK CLI to scaffold the operator project. For Go, run `kubebuilder init` or `operator-sdk init` with appropriate module and domain flags. Ensure the generated structure includes directories for APIs, controllers, and configuration. Commit the scaffolded code to the repository.[1][2][3]",
+            "status": "in-progress",
+            "testStrategy": "Run `make` or equivalent build commands to ensure the scaffolded project builds successfully. Confirm presence of expected directories and files."
+          },
+          {
+            "id": 3,
+            "title": "Define Initial Project Structure for CRDs, Controllers, and Utilities",
+            "description": "Establish directories and placeholder files for Custom Resource Definitions (CRDs), controllers, and utility code within the operator project.",
+            "dependencies": [],
+            "details": "Within the scaffolded project, create subdirectories for CRDs (e.g., `api/v1alpha1`), controllers (e.g., `controllers/`), and utilities (e.g., `internal/utils/`). Add placeholder Go files and comments describing intended contents. Ensure the structure aligns with Kubebuilder/Operator SDK conventions.[1][2]",
+            "status": "pending",
+            "testStrategy": "Check that all required directories and placeholder files exist and are tracked in version control."
+          },
+          {
+            "id": 4,
+            "title": "Set Up CI/CD Pipeline for Linting, Testing, and Building",
+            "description": "Configure automated pipelines to lint, test, and build the operator, including container image creation.",
+            "dependencies": [],
+            "details": "Create CI/CD configuration files (e.g., GitHub Actions, GitLab CI, or Jenkins) to run Go linters (golangci-lint), unit tests (`go test ./...`), and build the operator binary. Add steps to build and push container images using Docker or BuildKit. Store pipeline definitions in `.github/workflows/` or equivalent. Ensure secrets and credentials are handled securely.",
+            "status": "pending",
+            "testStrategy": "Trigger the pipeline on push and pull request events. Verify that linting, testing, and image build steps complete successfully."
+          },
+          {
+            "id": 5,
+            "title": "Validate End-to-End Operator Scaffolding and CI/CD Integration",
+            "description": "Perform a full validation of the repository, operator scaffolding, and CI/CD setup to ensure a functional foundation.",
+            "dependencies": [],
+            "details": "Clone the repository to a clean environment. Run all build and test commands locally. Push a test commit to trigger the CI/CD pipeline and confirm all stages pass. Optionally, deploy the scaffolded operator to a local Kubernetes cluster (e.g., Kind or Minikube) to verify basic deployment.",
+            "status": "pending",
+            "testStrategy": "Check for successful local builds, passing CI/CD runs, and operator pod startup in a test cluster."
+          }
+        ]
       },
       {
         "id": 2,
@@ -141,7 +187,7 @@
     ],
     "metadata": {
       "created": "2025-07-22T13:54:31.094Z",
-      "updated": "2025-07-22T13:54:31.094Z",
+      "updated": "2025-07-22T14:00:40.123Z",
       "description": "Tasks for master context"
     }
   }
