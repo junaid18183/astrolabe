@@ -38,6 +38,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
 	astrolabev1 "github.com/junaid18183/astrolabe/api/v1"
+	"github.com/junaid18183/astrolabe/controllers"
 	// +kubebuilder:scaffold:imports
 )
 
@@ -202,6 +203,15 @@ func main() {
 	}
 
 	// +kubebuilder:scaffold:builder
+
+	// Register Module controller
+	if err = (&controllers.ModuleReconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "Module")
+		os.Exit(1)
+	}
 
 	if metricsCertWatcher != nil {
 		setupLog.Info("Adding metrics certificate watcher to manager")

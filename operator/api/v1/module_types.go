@@ -17,8 +17,8 @@ limitations under the License.
 package v1
 
 import (
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
@@ -38,17 +38,16 @@ type ModuleSource struct {
 
 // ModuleStatus defines the observed state of Module.
 type ModuleStatus struct {
-	Description  string                `json:"description,omitempty"`
-	Inputs       []ModuleInput         `json:"inputs"`
-	Outputs      []ModuleOutput        `json:"outputs"`
-	Providers    []ModuleProvider      `json:"providers"`
-	Requirements ModuleRequirements    `json:"requirements"`
-	Resources    []ModuleResource      `json:"resources"`
-	Submodules   []ModuleSubmodule     `json:"submodules"`
-	Conditions   []ModuleCondition     `json:"conditions"`
-	LastSynced   metav1.Time           `json:"lastSynced"`
+	Description  string             `json:"description,omitempty"`
+	Inputs       []ModuleInput      `json:"inputs"`
+	Outputs      []ModuleOutput     `json:"outputs"`
+	Providers    []ModuleProvider   `json:"providers"`
+	Requirements ModuleRequirements `json:"requirements"`
+	Resources    []ModuleResource   `json:"resources"`
+	Submodules   []ModuleSubmodule  `json:"submodules"`
+	Conditions   []ModuleCondition  `json:"conditions"`
+	LastSynced   metav1.Time        `json:"lastSynced"`
 }
-
 
 type ModuleInput struct {
 	Name        string                `json:"name"`
@@ -73,8 +72,8 @@ type ModuleProvider struct {
 }
 
 type ModuleRequirements struct {
-	Terraform        ModuleTerraformRequirements `json:"terraform"`
-	RequiredProviders map[string]string          `json:"required_providers"`
+	Terraform         ModuleTerraformRequirements `json:"terraform"`
+	RequiredProviders map[string]string           `json:"required_providers"`
 }
 
 type ModuleTerraformRequirements struct {
@@ -92,11 +91,11 @@ type ModuleSubmodule struct {
 }
 
 type ModuleCondition struct {
-	Type               string     `json:"type"`
-	Status             string     `json:"status"`
+	Type               string      `json:"type"`
+	Status             string      `json:"status"`
 	LastTransitionTime metav1.Time `json:"lastTransitionTime"`
-	Reason             string     `json:"reason,omitempty"`
-	Message            string     `json:"message,omitempty"`
+	Reason             string      `json:"reason,omitempty"`
+	Message            string      `json:"message,omitempty"`
 }
 
 // +kubebuilder:object:root=true
