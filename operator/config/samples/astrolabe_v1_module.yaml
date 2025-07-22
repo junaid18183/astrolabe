@@ -1,9 +1,11 @@
-apiVersion: astrolabe.astrolabe.io/v1
+
+apiVersion: astrolabe.io/v1
 kind: Module
 metadata:
-  labels:
-    app.kubernetes.io/name: operator
-    app.kubernetes.io/managed-by: kustomize
-  name: module-sample
+  name: aws-vpc
+  namespace: default
 spec:
-  # TODO(user): Add fields here
+  source:
+    type: git
+    url: "https://github.com/terraform-aws-modules/terraform-aws-vpc.git"
+    version: "v5.5.0"
