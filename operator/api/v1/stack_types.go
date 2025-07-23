@@ -1,0 +1,97 @@
+package v1
+
+import (
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+)
+
+// StackSpec defines the desired state of Stack
+// Generated from OpenAPI spec.yaml
+// +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
+type StackSpec struct {
+	Modules          []StackModule        `json:"modules"`
+	Variables        apiextensionsv1.JSON `json:"variables,omitempty"`
+	BackendConfig    *BackendConfig       `json:"backendConfig,omitempty"`
+	DestroyRequested bool                 `json:"destroyRequested,omitempty"`
+	PlanRequested    bool                 `json:"planRequested,omitempty"`
+	ApplyRequested   bool                 `json:"applyRequested,omitempty"`
+}
+
+type StackModule struct {
+	ModuleID      string                `json:"moduleId"`
+	Name          string                `json:"name,omitempty"`
+	BackendConfig *BackendConfig        `json:"backendConfig,omitempty"`
+	Variables     apiextensionsv1.JSON  `json:"variables,omitempty"`
+	LinkedInputs  []LinkedInput         `json:"linkedInputs,omitempty"`
+	DependsOn     []string              `json:"dependsOn,omitempty"`
+}
+
+type BackendConfig struct {
+	Type     string                `json:"type"`
+	Settings apiextensionsv1.JSON  `json:"settings,omitempty"`
+}
+
+type LinkedInput struct {
+	FromModuleID string `json:"fromModuleId"`
+	ToVariable   string `json:"toVariable"`
+	FromOutput   string `json:"fromOutput"`
+}
+
+// StackStatus defines the observed state of Stack
+type StackStatus struct {
+	Phase      string                `json:"phase,omitempty"`
+	Outputs    apiextensionsv1.JSON  `json:"outputs,omitempty"`
+	Resources  []StackResource       `json:"resources,omitempty"`
+	LastPlan   *StackPlan            `json:"lastPlan,omitempty"`
+	LastApply  *StackApply           `json:"lastApply,omitempty"`
+	Events     []StackEvent          `json:"events,omitempty"`
+}
+
+type StackResource struct {
+	ID     string `json:"id"`
+	Type   string `json:"type"`
+	Name   string `json:"name"`
+	Status string `json:"status"`
+}
+
+type StackPlan struct {
+	Status          string              `json:"status,omitempty"`
+	Summary         string              `json:"summary,omitempty"`
+	ProposedChanges []StackPlanChange   `json:"proposedChanges,omitempty"`
+	Logs            string              `json:"logs,omitempty"`
+}
+
+type StackPlanChange struct {
+	Resource apiextensionsv1.JSON `json:"resource,omitempty"`
+	Action   string               `json:"action,omitempty"`
+}
+
+type StackApply struct {
+	Status  string `json:"status,omitempty"`
+	Summary string `json:"summary,omitempty"`
+	Logs    string `json:"logs,omitempty"`
+}
+
+type StackEvent struct {
+	Type      string `json:"type"`
+	Reason    string `json:"reason,omitempty"`
+	Message   string `json:"message,omitempty"`
+	Timestamp string `json:"timestamp,omitempty"`
+}
+
+// +kubebuilder:object:root=true
+type Stack struct {
+	metav1.TypeMeta   `json:",inline"`
+	metav1.ObjectMeta `json:"metadata,omitempty"`
+
+	Spec   StackSpec   `json:"spec,omitempty"`
+	Status StackStatus `json:"status,omitempty"`
+}
+
+// +kubebuilder:object:root=true
+type StackList struct {
+	metav1.TypeMeta `json:",inline"`
+	metav1.ListMeta `json:"metadata,omitempty"`
+	Items           []Stack `json:"items"`
+}
