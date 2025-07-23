@@ -4,6 +4,7 @@ import (
 	"archive/zip"
 	"compress/gzip"
 	"context"
+	"crypto/sha256"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -53,6 +54,21 @@ func (r *ModuleReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		return ctrl.Result{}, nil
 	}
 
+	// Compute hash of type, url, version
+	source := module.Spec.Source
+	hashInput := source.Type + "|" + source.URL + "|" + source.Version
+	hash := fmt.Sprintf("%x", sha256.Sum256([]byte(hashInput)))
+
+	// Check if hash is already stored in status. If not, or if changed, proceed. Otherwise, skip reconcile.
+	if module.Status.Conditions != nil {
+		for _, cond := range module.Status.Conditions {
+			if cond.Type == "SourceHash" && cond.Status == hash {
+				logger.Info("No change in type, url, or version; skipping reconciliation", "hash", hash)
+				return ctrl.Result{}, nil
+			}
+		}
+	}
+
 	setCondition := func(condType, status, reason, message string) {
 		now := metav1.Now()
 		found := false
@@ -76,6 +92,25 @@ func (r *ModuleReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 				Message:            message,
 				LastTransitionTime: now,
 			})
+		}
+		// Special handling for SourceHash: always update or insert
+		if condType == "SourceHash" {
+			updated := false
+			for i, cond := range module.Status.Conditions {
+				if cond.Type == "SourceHash" {
+					module.Status.Conditions[i].Status = status
+					module.Status.Conditions[i].LastTransitionTime = now
+					updated = true
+					break
+				}
+			}
+			if !updated {
+				module.Status.Conditions = append(module.Status.Conditions, astrolabev1.ModuleCondition{
+					Type:               "SourceHash",
+					Status:             status,
+					LastTransitionTime: now,
+				})
+			}
 		}
 	}
 
@@ -216,6 +251,8 @@ func (r *ModuleReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		return ctrl.Result{RequeueAfter: 1 * time.Minute}, nil
 	}
 	setCondition("Ready", "False", "Cloned", "Module source cloned successfully")
+	// Store the new hash in status
+	setCondition("SourceHash", hash, "", "")
 
 	logger.Info("Running terraform-docs", "dir", moduleDir)
 	docsCmd := exec.Command("terraform-docs", "json", moduleDir)
