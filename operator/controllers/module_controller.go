@@ -1,10 +1,17 @@
 package controllers
 
 import (
+	"archive/zip"
+	"compress/gzip"
 	"context"
 	"encoding/json"
+	"fmt"
+	"io"
+	"io/ioutil"
+	"net/http"
 	"os"
 	"os/exec"
+	"path"
 	"path/filepath"
 	"strings"
 	"time"
@@ -86,8 +93,97 @@ func (r *ModuleReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		}
 		fetchErr = cmd.Run()
 	case "http":
-		// TODO: implement HTTP fetch
-		fetchErr = nil
+		// Download and extract an archive from the URL (zip or tar.gz)
+		resp, err := http.Get(module.Spec.Source.URL)
+		if err != nil {
+			fetchErr = err
+			break
+		}
+		defer resp.Body.Close()
+		if resp.StatusCode != http.StatusOK {
+			fetchErr = fmt.Errorf("failed to download file: %s", resp.Status)
+			break
+		}
+		os.MkdirAll(workDir, 0755)
+		// Save to a temp file
+		tmpFile, err := ioutil.TempFile(workDir, "module-archive-*")
+		if err != nil {
+			fetchErr = err
+			break
+		}
+		defer os.Remove(tmpFile.Name())
+		_, err = io.Copy(tmpFile, resp.Body)
+		if err != nil {
+			fetchErr = err
+			break
+		}
+		tmpFile.Close()
+		// Determine archive type by extension
+		ext := strings.ToLower(path.Ext(module.Spec.Source.URL))
+		if ext == ".zip" {
+			r, err := zip.OpenReader(tmpFile.Name())
+			if err != nil {
+				fetchErr = err
+				break
+			}
+			defer r.Close()
+			for _, f := range r.File {
+				fpath := filepath.Join(workDir, f.Name)
+				if f.FileInfo().IsDir() {
+					os.MkdirAll(fpath, f.Mode())
+					continue
+				}
+				if err := os.MkdirAll(filepath.Dir(fpath), 0755); err != nil {
+					fetchErr = err
+					break
+				}
+				outFile, err := os.OpenFile(fpath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, f.Mode())
+				if err != nil {
+					fetchErr = err
+					break
+				}
+				rc, err := f.Open()
+				if err != nil {
+					outFile.Close()
+					fetchErr = err
+					break
+				}
+				_, err = io.Copy(outFile, rc)
+				outFile.Close()
+				rc.Close()
+				if err != nil {
+					fetchErr = err
+					break
+				}
+			}
+		} else if ext == ".gz" || ext == ".tgz" {
+			// Only handle single-file tar.gz for simplicity
+			gz, err := os.Open(tmpFile.Name())
+			if err != nil {
+				fetchErr = err
+				break
+			}
+			defer gz.Close()
+			gzr, err := gzip.NewReader(gz)
+			if err != nil {
+				fetchErr = err
+				break
+			}
+			defer gzr.Close()
+			out, err := os.Create(filepath.Join(workDir, "main.tf"))
+			if err != nil {
+				fetchErr = err
+				break
+			}
+			defer out.Close()
+			_, err = io.Copy(out, gzr)
+			if err != nil {
+				fetchErr = err
+				break
+			}
+		} else {
+			fetchErr = fmt.Errorf("unsupported archive type: %s", ext)
+		}
 	case "local":
 		// TODO: implement local path copy
 		fetchErr = nil
