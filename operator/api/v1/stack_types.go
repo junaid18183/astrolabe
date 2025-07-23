@@ -1,35 +1,29 @@
 package v1
 
 import (
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // StackSpec defines the desired state of Stack
-// Generated from OpenAPI spec.yaml
-// +kubebuilder:object:root=true
-// +kubebuilder:subresource:status
 type StackSpec struct {
-	Modules          []StackModule        `json:"modules"`
-	Variables        apiextensionsv1.JSON `json:"variables,omitempty"`
-	BackendConfig    *BackendConfig       `json:"backendConfig,omitempty"`
-	DestroyRequested bool                 `json:"destroyRequested,omitempty"`
-	PlanRequested    bool                 `json:"planRequested,omitempty"`
-	ApplyRequested   bool                 `json:"applyRequested,omitempty"`
+	Modules          []StackModule          `json:"modules"`
+	Variables        apiextensionsv1.JSON   `json:"variables,omitempty"`
+	BackendConfig    *StackBackendConfig    `json:"backendConfig,omitempty"`
+	CloudCredentials *StackCloudCredentials `json:"cloudCredentials,omitempty"`
+	DestroyRequested bool                   `json:"destroyRequested,omitempty"`
+	PlanRequested    bool                   `json:"planRequested,omitempty"`
+	ApplyRequested   bool                   `json:"applyRequested,omitempty"`
 }
 
 type StackModule struct {
-	ModuleID      string                `json:"moduleId"`
-	Name          string                `json:"name,omitempty"`
-	BackendConfig *BackendConfig        `json:"backendConfig,omitempty"`
-	Variables     apiextensionsv1.JSON  `json:"variables,omitempty"`
-	LinkedInputs  []LinkedInput         `json:"linkedInputs,omitempty"`
-	DependsOn     []string              `json:"dependsOn,omitempty"`
-}
-
-type BackendConfig struct {
-	Type     string                `json:"type"`
-	Settings apiextensionsv1.JSON  `json:"settings,omitempty"`
+	ModuleID         string                 `json:"moduleId"`
+	Name             string                 `json:"name,omitempty"`
+	BackendConfig    *StackBackendConfig    `json:"backendConfig,omitempty"`
+	CloudCredentials *StackCloudCredentials `json:"cloudCredentials,omitempty"`
+	Variables        apiextensionsv1.JSON   `json:"variables,omitempty"`
+	LinkedInputs     []LinkedInput          `json:"linkedInputs,omitempty"`
+	DependsOn        []string               `json:"dependsOn,omitempty"`
 }
 
 type LinkedInput struct {
@@ -38,14 +32,32 @@ type LinkedInput struct {
 	FromOutput   string `json:"fromOutput"`
 }
 
+// Inlined for CRD compatibility (no $ref in OpenAPI)
+type StackBackendConfig struct {
+	Type           string                     `json:"type"`
+	Settings       apiextensionsv1.JSON       `json:"settings"`
+	CredentialsRef StackBackendCredentialsRef `json:"credentialsRef"`
+}
+
+type StackBackendCredentialsRef struct {
+	Name string `json:"name"`
+}
+
+type StackCloudCredentials struct {
+	Type      string               `json:"type"`
+	SecretRef StackSecretReference `json:"secretRef"`
+}
+
+type StackSecretReference struct {
+	Name string `json:"name"`
+}
+
 // StackStatus defines the observed state of Stack
 type StackStatus struct {
-	Phase      string                `json:"phase,omitempty"`
-	Outputs    apiextensionsv1.JSON  `json:"outputs,omitempty"`
-	Resources  []StackResource       `json:"resources,omitempty"`
-	LastPlan   *StackPlan            `json:"lastPlan,omitempty"`
-	LastApply  *StackApply           `json:"lastApply,omitempty"`
-	Events     []StackEvent          `json:"events,omitempty"`
+	Phase     string               `json:"phase,omitempty"`
+	Outputs   apiextensionsv1.JSON `json:"outputs,omitempty"`
+	Resources []StackResource      `json:"resources,omitempty"`
+	Events    []StackEvent         `json:"events,omitempty"`
 }
 
 type StackResource struct {
@@ -53,13 +65,6 @@ type StackResource struct {
 	Type   string `json:"type"`
 	Name   string `json:"name"`
 	Status string `json:"status"`
-}
-
-type StackPlan struct {
-	Status          string              `json:"status,omitempty"`
-	Summary         string              `json:"summary,omitempty"`
-	ProposedChanges []StackPlanChange   `json:"proposedChanges,omitempty"`
-	Logs            string              `json:"logs,omitempty"`
 }
 
 type StackPlanChange struct {

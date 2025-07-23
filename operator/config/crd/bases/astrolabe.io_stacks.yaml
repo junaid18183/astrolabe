@@ -36,19 +36,42 @@ spec:
           metadata:
             type: object
           spec:
-            description: |-
-              StackSpec defines the desired state of Stack
-              Generated from OpenAPI spec.yaml
+            description: StackSpec defines the desired state of Stack
             properties:
               applyRequested:
                 type: boolean
               backendConfig:
+                description: Inlined for CRD compatibility (no $ref in OpenAPI)
                 properties:
+                  credentialsRef:
+                    properties:
+                      name:
+                        type: string
+                    required:
+                    - name
+                    type: object
                   settings:
                     x-kubernetes-preserve-unknown-fields: true
                   type:
                     type: string
                 required:
+                - credentialsRef
+                - settings
+                - type
+                type: object
+              cloudCredentials:
+                properties:
+                  secretRef:
+                    properties:
+                      name:
+                        type: string
+                    required:
+                    - name
+                    type: object
+                  type:
+                    type: string
+                required:
+                - secretRef
                 - type
                 type: object
               destroyRequested:
@@ -57,12 +80,37 @@ spec:
                 items:
                   properties:
                     backendConfig:
+                      description: Inlined for CRD compatibility (no $ref in OpenAPI)
                       properties:
+                        credentialsRef:
+                          properties:
+                            name:
+                              type: string
+                          required:
+                          - name
+                          type: object
                         settings:
                           x-kubernetes-preserve-unknown-fields: true
                         type:
                           type: string
                       required:
+                      - credentialsRef
+                      - settings
+                      - type
+                      type: object
+                    cloudCredentials:
+                      properties:
+                        secretRef:
+                          properties:
+                            name:
+                              type: string
+                          required:
+                          - name
+                          type: object
+                        type:
+                          type: string
+                      required:
+                      - secretRef
                       - type
                       type: object
                     dependsOn:
@@ -119,33 +167,6 @@ spec:
                   - type
                   type: object
                 type: array
-              lastApply:
-                properties:
-                  logs:
-                    type: string
-                  status:
-                    type: string
-                  summary:
-                    type: string
-                type: object
-              lastPlan:
-                properties:
-                  logs:
-                    type: string
-                  proposedChanges:
-                    items:
-                      properties:
-                        action:
-                          type: string
-                        resource:
-                          x-kubernetes-preserve-unknown-fields: true
-                      type: object
-                    type: array
-                  status:
-                    type: string
-                  summary:
-                    type: string
-                type: object
               outputs:
                 x-kubernetes-preserve-unknown-fields: true
               phase:
