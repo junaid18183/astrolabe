@@ -44,7 +44,8 @@ GEMINI.md
 opencode.json
 Notes.md
 
+target/
+
 # Task files
 # tasks.json
-# tasks/
-target/
+# tasks/ 
