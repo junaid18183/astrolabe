@@ -85,15 +85,17 @@ func (r *ModuleReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	os.MkdirAll(workDir, 0755)
 
 	var fetchErr error
+	var moduleDir string = workDir
 	switch module.Spec.Source.Type {
 	case "git":
+		logger.Info("Cloning git repository", "url", module.Spec.Source.URL, "version", module.Spec.Source.Version)
 		cmd := exec.Command("git", "clone", module.Spec.Source.URL, workDir)
 		if module.Spec.Source.Version != "" {
 			cmd = exec.Command("git", "clone", "--branch", module.Spec.Source.Version, module.Spec.Source.URL, workDir)
 		}
 		fetchErr = cmd.Run()
 	case "http":
-		// Download and extract an archive from the URL (zip or tar.gz)
+		logger.Info("Downloading and extracting HTTP archive", "url", module.Spec.Source.URL)
 		resp, err := http.Get(module.Spec.Source.URL)
 		if err != nil {
 			fetchErr = err
@@ -105,7 +107,6 @@ func (r *ModuleReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 			break
 		}
 		os.MkdirAll(workDir, 0755)
-		// Save to a temp file
 		tmpFile, err := ioutil.TempFile(workDir, "module-archive-*")
 		if err != nil {
 			fetchErr = err
@@ -118,7 +119,6 @@ func (r *ModuleReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 			break
 		}
 		tmpFile.Close()
-		// Determine archive type by extension
 		ext := strings.ToLower(path.Ext(module.Spec.Source.URL))
 		if ext == ".zip" {
 			r, err := zip.OpenReader(tmpFile.Name())
@@ -156,8 +156,23 @@ func (r *ModuleReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 					break
 				}
 			}
+			// Detect single subdirectory after extraction
+			entries, err := ioutil.ReadDir(workDir)
+			if err == nil {
+				subdirs := []string{}
+				for _, entry := range entries {
+					if entry.IsDir() {
+						subdirs = append(subdirs, entry.Name())
+					}
+				}
+				if len(subdirs) == 1 {
+					moduleDir = filepath.Join(workDir, subdirs[0])
+					logger.Info("Detected single subdirectory after extraction", "moduleDir", moduleDir)
+				} else {
+					logger.Info("No single subdirectory detected after extraction", "dirs", subdirs)
+				}
+			}
 		} else if ext == ".gz" || ext == ".tgz" {
-			// Only handle single-file tar.gz for simplicity
 			gz, err := os.Open(tmpFile.Name())
 			if err != nil {
 				fetchErr = err
@@ -185,9 +200,10 @@ func (r *ModuleReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 			fetchErr = fmt.Errorf("unsupported archive type: %s", ext)
 		}
 	case "local":
-		// TODO: implement local path copy
+		logger.Info("Local source type not implemented yet")
 		fetchErr = nil
 	default:
+		logger.Info("Unknown source type", "type", module.Spec.Source.Type)
 		fetchErr = nil
 	}
 
@@ -201,12 +217,12 @@ func (r *ModuleReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	}
 	setCondition("Ready", "False", "Cloned", "Module source cloned successfully")
 
-	// Run terraform-docs json .
-	docsCmd := exec.Command("terraform-docs", "json", workDir)
+	logger.Info("Running terraform-docs", "dir", moduleDir)
+	docsCmd := exec.Command("terraform-docs", "json", moduleDir)
 	docsOut, err := docsCmd.Output()
 	if err != nil {
 		setCondition("Ready", "False", "ParseFailed", "Failed to run terraform-docs")
-		logger.Error(err, "Failed to run terraform-docs")
+		logger.Error(err, "Failed to run terraform-docs", "dir", moduleDir)
 		if module.ObjectMeta.DeletionTimestamp == nil {
 			_ = r.Status().Update(ctx, &module)
 		}
