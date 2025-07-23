@@ -100,6 +100,10 @@ type ModuleCondition struct {
 
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
+// +kubebuilder:printcolumn:name="SOURCETYPE",type=string,JSONPath=".spec.source.type"
+// +kubebuilder:printcolumn:name="SOURCEURL",type=string,JSONPath=".spec.source.url"
+// +kubebuilder:printcolumn:name="VERSION",type=string,JSONPath=".spec.source.version"
+// +kubebuilder:printcolumn:name="READY",type=string,JSONPath=".status.conditions[?(@.type==\"Ready\")].status"
 
 // Module is the Schema for the modules API.
 type Module struct {

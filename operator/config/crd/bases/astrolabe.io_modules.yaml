@@ -14,7 +14,20 @@ spec:
     singular: module
   scope: Namespaced
   versions:
-  - name: v1
+  - additionalPrinterColumns:
+    - jsonPath: .spec.source.type
+      name: SOURCETYPE
+      type: string
+    - jsonPath: .spec.source.url
+      name: SOURCEURL
+      type: string
+    - jsonPath: .spec.source.version
+      name: VERSION
+      type: string
+    - jsonPath: .status.conditions[?(@.type=="Ready")].status
+      name: READY
+      type: string
+    name: v1
     schema:
       openAPIV3Schema:
         description: Module is the Schema for the modules API.
