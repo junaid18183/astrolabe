@@ -8,6 +8,17 @@
 #     type: git
 #     url: "https://github.com/terraform-aws-modules/terraform-aws-vpc.git"
 #     version: "v5.5.0"
+# ---
+# apiVersion: astrolabe.io/v1
+# kind: Module
+# metadata:
+#   name: eks
+#   namespace: default
+# spec:
+#   source:
+#     type: git
+#     url: "https://github.com/terraform-aws-modules/terraform-aws-eks.git"
+#     version: "v20.37.2"
 ---
 apiVersion: astrolabe.io/v1
 kind: Module
@@ -16,7 +27,6 @@ metadata:
   namespace: default
 spec:
   source:
-    type: git
-    url: "https://github.com/terraform-aws-modules/terraform-aws-eks.git"
-    version: "v20.37.2"
+    type: http
+    url: "https://github.com/terraform-aws-modules/terraform-aws-eks/archive/refs/tags/v20.37.2.zip"
 ---

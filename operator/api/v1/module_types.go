@@ -29,8 +29,8 @@ type ModuleSpec struct {
 	Source ModuleSource `json:"source"`
 }
 
-// +kubebuilder:validation:Enum=git;http
 type ModuleSource struct {
+	// +kubebuilder:validation:Enum=git;http
 	Type    string `json:"type"`
 	URL     string `json:"url"`
 	Version string `json:"version,omitempty"`

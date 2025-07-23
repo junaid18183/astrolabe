@@ -53,13 +53,13 @@ spec:
             description: ModuleSpec defines the desired state of Module.
             properties:
               source:
-                enum:
-                - git
-                - http
                 properties:
                   path:
                     type: string
                   type:
+                    enum:
+                    - git
+                    - http
                     type: string
                   url:
                     type: string
