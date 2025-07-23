@@ -1,8 +1,7 @@
 apiVersion: astrolabe.io/v1
 kind: BackendConfig
 metadata:
-  name: example-backendconfig
-  namespace: default
+  name: aws-s3-backend
 spec:
   type: s3
   settings:
