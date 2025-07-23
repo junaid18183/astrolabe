@@ -50,6 +50,21 @@ spec:
               settings:
                 x-kubernetes-preserve-unknown-fields: true
               type:
+                description: Type is the Terraform backend type.
+                enum:
+                - local
+                - s3
+                - azurerm
+                - gcs
+                - consul
+                - etcd
+                - etcdv3
+                - http
+                - oss
+                - artifactory
+                - swift
+                - pg
+                - remote
                 type: string
             required:
             - credentialRef

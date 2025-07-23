@@ -8,6 +8,8 @@ import (
 // BackendConfigSpec defines the desired state of BackendConfig
 // Generated from OpenAPI backen_config_spec.yaml
 type BackendConfigSpec struct {
+	// Type is the Terraform backend type.
+	// +kubebuilder:validation:Enum=local;s3;azurerm;gcs;consul;etcd;etcdv3;http;oss;artifactory;swift;pg;remote
 	Type          string               `json:"type"`
 	Settings      apiextensionsv1.JSON `json:"settings"`
 	CredentialRef BackendCredentialRef `json:"credentialRef"`
