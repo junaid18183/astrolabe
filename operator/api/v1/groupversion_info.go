@@ -36,7 +36,7 @@ var (
 )
 
 func init() {
+	SchemeBuilder.Register(&Module{}, &ModuleList{})
 	SchemeBuilder.Register(&Stack{}, &StackList{})
-	SchemeBuilder.Register(&CloudCredentials{}, &CloudCredentialsList{})
 	SchemeBuilder.Register(&BackendConfig{}, &BackendConfigList{})
 }

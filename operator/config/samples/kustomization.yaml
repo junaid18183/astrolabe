@@ -2,6 +2,5 @@
 resources:
 - module.yaml
 - backendconfig.yaml
-- cloudcredential.yaml
 - stack.yaml
 # +kubebuilder:scaffold:manifestskustomizesamples

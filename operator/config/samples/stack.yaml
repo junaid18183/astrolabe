@@ -2,7 +2,6 @@ apiVersion: astrolabe.io/v1
 kind: Stack
 metadata:
   name: aws-vpc-demo
-  namespace: devops
 spec:
   backendId:
     name: aws-s3-backend

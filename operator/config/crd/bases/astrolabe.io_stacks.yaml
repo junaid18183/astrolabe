@@ -38,99 +38,28 @@ spec:
           spec:
             description: StackSpec defines the desired state of Stack
             properties:
-              applyRequested:
-                type: boolean
-              backendConfig:
-                description: Inlined for CRD compatibility (no $ref in OpenAPI)
+              backendId:
+                description: StackBackendId matches backendId in stack.yaml
                 properties:
-                  credentialsRef:
-                    properties:
-                      name:
-                        type: string
-                    required:
-                    - name
-                    type: object
-                  settings:
-                    x-kubernetes-preserve-unknown-fields: true
-                  type:
+                  name:
                     type: string
                 required:
-                - credentialsRef
-                - settings
-                - type
+                - name
                 type: object
-              cloudCredentials:
+              credentialsRef:
+                description: StackCredentialsRef matches credentialsRef in stack.yaml
                 properties:
-                  secretRef:
-                    properties:
-                      name:
-                        type: string
-                    required:
-                    - name
-                    type: object
-                  type:
+                  name:
                     type: string
                 required:
-                - secretRef
-                - type
+                - name
                 type: object
-              destroyRequested:
-                type: boolean
               modules:
                 items:
                   properties:
-                    backendConfig:
-                      description: Inlined for CRD compatibility (no $ref in OpenAPI)
-                      properties:
-                        credentialsRef:
-                          properties:
-                            name:
-                              type: string
-                          required:
-                          - name
-                          type: object
-                        settings:
-                          x-kubernetes-preserve-unknown-fields: true
-                        type:
-                          type: string
-                      required:
-                      - credentialsRef
-                      - settings
-                      - type
-                      type: object
-                    cloudCredentials:
-                      properties:
-                        secretRef:
-                          properties:
-                            name:
-                              type: string
-                          required:
-                          - name
-                          type: object
-                        type:
-                          type: string
-                      required:
-                      - secretRef
-                      - type
-                      type: object
                     dependsOn:
                       items:
                         type: string
-                      type: array
-                    linkedInputs:
-                      items:
-                        properties:
-                          fromModuleId:
-                            type: string
-                          fromOutput:
-                            type: string
-                          toVariable:
-                            type: string
-                        required:
-                        - fromModuleId
-                        - fromOutput
-                        - toVariable
-                        type: object
                       type: array
                     moduleId:
                       type: string
@@ -142,11 +71,9 @@ spec:
                   - moduleId
                   type: object
                 type: array
-              planRequested:
-                type: boolean
-              variables:
-                x-kubernetes-preserve-unknown-fields: true
             required:
+            - backendId
+            - credentialsRef
             - modules
             type: object
           status:

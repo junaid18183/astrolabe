@@ -2,7 +2,6 @@ apiVersion: astrolabe.io/v1
 kind: Module
 metadata:
   name: aws-vpc
-  namespace: default
 spec:
   source:
     type: git
@@ -13,7 +12,6 @@ spec:
 # kind: Module
 # metadata:
 #   name: eks
-#   namespace: default
 # spec:
 #   source:
 #     type: git
@@ -24,7 +22,6 @@ spec:
 # kind: Module
 # metadata:
 #   name: eks
-#   namespace: default
 # spec:
 #   source:
 #     type: http
