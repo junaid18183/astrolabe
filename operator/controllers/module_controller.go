@@ -6,13 +6,14 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"k8s.io/apimachinery/pkg/runtime"
 
 	astrolabev1 "github.com/junaid18183/astrolabe/api/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -33,10 +34,16 @@ func (r *ModuleReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 
 	var module astrolabev1.Module
 	if err := r.Get(ctx, req.NamespacedName, &module); err != nil {
-		if errors.IsNotFound(err) {
+		if k8serrors.IsNotFound(err) {
 			return ctrl.Result{}, nil
 		}
 		return ctrl.Result{}, err
+	}
+
+	// If the Module is being deleted, skip all processing and status updates
+	if module.ObjectMeta.DeletionTimestamp != nil {
+		logger.Info("Module is being deleted, skipping status update and processing", "name", module.Name, "namespace", module.Namespace)
+		return ctrl.Result{}, nil
 	}
 
 	setCondition := func(condType, status, reason, message string) {
@@ -91,7 +98,9 @@ func (r *ModuleReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	if fetchErr != nil {
 		setCondition("Ready", "False", "CloneFailed", "Failed to fetch module source")
 		logger.Error(fetchErr, "Failed to fetch module source")
-		_ = r.Status().Update(ctx, &module)
+		if module.ObjectMeta.DeletionTimestamp == nil {
+			_ = r.Status().Update(ctx, &module)
+		}
 		return ctrl.Result{RequeueAfter: 1 * time.Minute}, nil
 	}
 	setCondition("Ready", "False", "Cloned", "Module source cloned successfully")
@@ -102,7 +111,9 @@ func (r *ModuleReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	if err != nil {
 		setCondition("Ready", "False", "ParseFailed", "Failed to run terraform-docs")
 		logger.Error(err, "Failed to run terraform-docs")
-		_ = r.Status().Update(ctx, &module)
+		if module.ObjectMeta.DeletionTimestamp == nil {
+			_ = r.Status().Update(ctx, &module)
+		}
 		return ctrl.Result{RequeueAfter: 1 * time.Minute}, nil
 	}
 	setCondition("Ready", "False", "Parsed", "terraform-docs output parsed successfully")
@@ -222,12 +233,27 @@ func (r *ModuleReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		module.Status.Requirements.RequiredProviders = map[string]string{}
 	}
 
-	if err := r.Status().Update(ctx, &module); err != nil {
-		logger.Error(err, "Failed to update Module status")
-		return ctrl.Result{}, err
+	if module.ObjectMeta.DeletionTimestamp == nil {
+		if err := r.Status().Update(ctx, &module); err != nil {
+			// Ignore not found and precondition failed errors during deletion
+			if k8serrors.IsNotFound(err) || isPreconditionFailed(err) || (err != nil && strings.Contains(err.Error(), "Precondition failed")) {
+				logger.Info("Ignoring status update error during deletion", "error", err)
+				return ctrl.Result{}, nil
+			}
+			logger.Error(err, "Failed to update Module status")
+			return ctrl.Result{}, err
+		}
 	}
 
 	return ctrl.Result{}, nil
+}
+
+// isPreconditionFailed checks if the error is a precondition failed error
+func isPreconditionFailed(err error) bool {
+	if statusErr, ok := err.(*k8serrors.StatusError); ok {
+		return string(statusErr.ErrStatus.Reason) == "PreconditionFailed"
+	}
+	return false
 }
 
 func (r *ModuleReconciler) SetupWithManager(mgr ctrl.Manager) error {
