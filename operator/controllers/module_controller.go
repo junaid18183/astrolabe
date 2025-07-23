@@ -39,6 +39,32 @@ func (r *ModuleReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		return ctrl.Result{}, err
 	}
 
+	setCondition := func(condType, status, reason, message string) {
+		now := metav1.Now()
+		found := false
+		for i, cond := range module.Status.Conditions {
+			if cond.Type == condType {
+				if cond.Status != status || cond.Reason != reason || cond.Message != message {
+					module.Status.Conditions[i].Status = status
+					module.Status.Conditions[i].Reason = reason
+					module.Status.Conditions[i].Message = message
+					module.Status.Conditions[i].LastTransitionTime = now
+				}
+				found = true
+				break
+			}
+		}
+		if !found {
+			module.Status.Conditions = append(module.Status.Conditions, astrolabev1.ModuleCondition{
+				Type:               condType,
+				Status:             status,
+				Reason:             reason,
+				Message:            message,
+				LastTransitionTime: now,
+			})
+		}
+	}
+
 	// Fetch/clone the module source
 	workDir := filepath.Join(os.TempDir(), "astrolabe-modules", module.Name+"-"+string(module.UID))
 	os.RemoveAll(workDir)
@@ -63,17 +89,23 @@ func (r *ModuleReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	}
 
 	if fetchErr != nil {
+		setCondition("Ready", "False", "CloneFailed", "Failed to fetch module source")
 		logger.Error(fetchErr, "Failed to fetch module source")
+		_ = r.Status().Update(ctx, &module)
 		return ctrl.Result{RequeueAfter: 1 * time.Minute}, nil
 	}
+	setCondition("Ready", "False", "Cloned", "Module source cloned successfully")
 
 	// Run terraform-docs json .
 	docsCmd := exec.Command("terraform-docs", "json", workDir)
 	docsOut, err := docsCmd.Output()
 	if err != nil {
+		setCondition("Ready", "False", "ParseFailed", "Failed to run terraform-docs")
 		logger.Error(err, "Failed to run terraform-docs")
+		_ = r.Status().Update(ctx, &module)
 		return ctrl.Result{RequeueAfter: 1 * time.Minute}, nil
 	}
+	setCondition("Ready", "False", "Parsed", "terraform-docs output parsed successfully")
 
 	// Parse terraform-docs output (JSON) and update status
 	type tfDocs struct {
@@ -180,6 +212,7 @@ func (r *ModuleReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		}
 	}
 	module.Status.LastSynced = metav1.Now()
+	setCondition("Ready", "True", "Synced", "Module successfully parsed and status updated")
 
 	// Ensure required fields are always set
 	if module.Status.Conditions == nil {
