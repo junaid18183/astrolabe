@@ -7,15 +7,13 @@ import (
 
 // BackendConfigSpec defines the desired state of BackendConfig
 // Generated from OpenAPI backen_config_spec.yaml
-// +kubebuilder:object:root=true
-// +kubebuilder:subresource:status
 type BackendConfigSpec struct {
-	Type           string                `json:"type"`
-	Settings       apiextensionsv1.JSON  `json:"settings"`
-	CredentialsRef BackendCredentialsRef `json:"credentialsRef"`
+	Type          string               `json:"type"`
+	Settings      apiextensionsv1.JSON `json:"settings"`
+	CredentialRef BackendCredentialRef `json:"credentialRef"`
 }
 
-type BackendCredentialsRef struct {
+type BackendCredentialRef struct {
 	Name string `json:"name"`
 }
 

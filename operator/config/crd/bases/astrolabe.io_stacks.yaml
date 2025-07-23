@@ -38,16 +38,16 @@ spec:
           spec:
             description: StackSpec defines the desired state of Stack
             properties:
-              backendId:
-                description: StackBackendId matches backendId in stack.yaml
+              backendRef:
+                description: StackBackendRef matches backendRef in stack.yaml
                 properties:
                   name:
                     type: string
                 required:
                 - name
                 type: object
-              credentialsRef:
-                description: StackCredentialsRef matches credentialsRef in stack.yaml
+              credentialRef:
+                description: StackCredentialRef matches CredentialRef in stack.yaml
                 properties:
                   name:
                     type: string
@@ -72,8 +72,8 @@ spec:
                   type: object
                 type: array
             required:
-            - backendId
-            - credentialsRef
+            - backendRef
+            - credentialRef
             - modules
             type: object
           status:

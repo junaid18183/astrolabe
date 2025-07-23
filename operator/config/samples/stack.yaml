@@ -3,10 +3,10 @@ kind: Stack
 metadata:
   name: aws-vpc-demo
 spec:
-  backendId:
-    name: aws-s3-backend
-  credentialsRef:
-    name: aws-creds-dev
+  backendRef:
+    name: aws-s3-backend2
+  credentialRef:
+    name: aws-creds-dev2
   modules:
     - moduleId: aws-vpc
       name: network-vpc

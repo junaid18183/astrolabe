@@ -7,9 +7,9 @@ import (
 
 // StackSpec defines the desired state of Stack
 type StackSpec struct {
-	BackendId      *StackBackendId      `json:"backendId"`
-	CredentialsRef *StackCredentialsRef `json:"credentialsRef"`
-	Modules        []StackModule        `json:"modules"`
+	BackendRef    *StackBackendRef    `json:"backendRef"`
+	CredentialRef *StackCredentialRef `json:"credentialRef"`
+	Modules       []StackModule       `json:"modules"`
 }
 
 type StackModule struct {
@@ -19,13 +19,13 @@ type StackModule struct {
 	DependsOn []string             `json:"dependsOn,omitempty"`
 }
 
-// StackBackendId matches backendId in stack.yaml
-type StackBackendId struct {
+// StackBackendRef matches backendRef in stack.yaml
+type StackBackendRef struct {
 	Name string `json:"name"`
 }
 
-// StackCredentialsRef matches credentialsRef in stack.yaml
-type StackCredentialsRef struct {
+// StackCredentialRef matches CredentialRef in stack.yaml
+type StackCredentialRef struct {
 	Name string `json:"name"`
 }
 

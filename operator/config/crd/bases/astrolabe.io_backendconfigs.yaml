@@ -40,7 +40,7 @@ spec:
               BackendConfigSpec defines the desired state of BackendConfig
               Generated from OpenAPI backen_config_spec.yaml
             properties:
-              credentialsRef:
+              credentialRef:
                 properties:
                   name:
                     type: string
@@ -52,7 +52,7 @@ spec:
               type:
                 type: string
             required:
-            - credentialsRef
+            - credentialRef
             - settings
             - type
             type: object
