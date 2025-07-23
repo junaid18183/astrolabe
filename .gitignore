@@ -46,4 +46,5 @@ Notes.md
 
 # Task files
 # tasks.json
-# tasks/ 
+# tasks/
+target/
