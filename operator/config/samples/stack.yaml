@@ -1,0 +1,38 @@
+apiVersion: astrolabe.io/v1
+kind: Stack
+metadata:
+  name: example-stack
+  namespace: default
+spec:
+  modules:
+    - moduleId: vpc
+      name: aws-vpc
+      backendConfig:
+        type: s3
+        settings:
+          bucket: my-tf-state-bucket
+          region: us-west-2
+        credentialsRef:
+          name: my-backend-credentials
+      cloudCredentials:
+        type: aws
+        secretRef:
+          name: my-aws-secret
+      variables: {}
+      linkedInputs: []
+      dependsOn: []
+  variables: {}
+  backendConfig:
+    type: s3
+    settings:
+      bucket: my-tf-state-bucket
+      region: us-west-2
+    credentialsRef:
+      name: my-backend-credentials
+  cloudCredentials:
+    type: aws
+    secretRef:
+      name: my-aws-secret
+  destroyRequested: false
+  planRequested: false
+  applyRequested: false

@@ -1,0 +1,12 @@
+apiVersion: astrolabe.io/v1
+kind: BackendConfig
+metadata:
+  name: example-backendconfig
+  namespace: default
+spec:
+  type: s3
+  settings:
+    bucket: my-tf-state-bucket
+    region: us-west-2
+  credentialsRef:
+    name: my-backend-credentials
