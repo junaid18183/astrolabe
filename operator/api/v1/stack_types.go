@@ -71,6 +71,11 @@ type StackEvent struct {
 }
 
 // +kubebuilder:object:root=true
+// +kubebuilder:printcolumn:name="Phase",type=string,JSONPath=".status.phase",description="Stack phase"
+// +kubebuilder:printcolumn:name="Status",type=string,JSONPath=".status.status",description="Stack status"
+// +kubebuilder:printcolumn:name="Summary",type=string,JSONPath=".status.summary",description="Stack summary"
+// +kubebuilder:printcolumn:name="Backend",type=string,JSONPath=".spec.backendRef.name",description="Backend reference name"
+// +kubebuilder:printcolumn:name="Modules",type=integer,JSONPath=".spec.modules | length(@)",description="Number of modules"
 type Stack struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

@@ -14,7 +14,28 @@ spec:
     singular: stack
   scope: Namespaced
   versions:
-  - name: v1
+  - additionalPrinterColumns:
+    - description: Stack phase
+      jsonPath: .status.phase
+      name: Phase
+      type: string
+    - description: Stack status
+      jsonPath: .status.status
+      name: Status
+      type: string
+    - description: Stack summary
+      jsonPath: .status.summary
+      name: Summary
+      type: string
+    - description: Backend reference name
+      jsonPath: .spec.backendRef.name
+      name: Backend
+      type: string
+    - description: Number of modules
+      jsonPath: .spec.modules | length(@)
+      name: Modules
+      type: integer
+    name: v1
     schema:
       openAPIV3Schema:
         properties:
@@ -124,3 +145,4 @@ spec:
         type: object
     served: true
     storage: true
+    subresources: {}

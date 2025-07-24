@@ -7,18 +7,5 @@ spec:
   type: s3
   settings:
     bucket: my-tf-state-bucket
-    region: us-west-2
-  credentialRef:
-    name: my-backend-credentials
----
-apiVersion: v1
-kind: Secret
-metadata:
-  name: my-backend-credentials
-type: Opaque
-stringData:
-  AWS_ACCESS_KEY_ID: my-access-key
-  AWS_SECRET_ACCESS_KEY: my-secret-key
-  AWS_DEFAULT_REGION: us-east-1
-  AWS_REGION: us-east-1
+    region: us-east-1
 ---

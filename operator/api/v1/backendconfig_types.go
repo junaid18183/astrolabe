@@ -7,30 +7,24 @@ import (
 
 // BackendConfigSpec defines the desired state of BackendConfig
 // Generated from OpenAPI backen_config_spec.yaml
+
 type BackendConfigSpec struct {
 	// Type is the Terraform backend type.
 	// +kubebuilder:validation:Enum=local;s3;azurerm;gcs;consul;etcd;etcdv3;http;oss;artifactory;swift;pg;remote
-	Type          string               `json:"type"`
-	Settings      apiextensionsv1.JSON `json:"settings"`
-	CredentialRef BackendCredentialRef `json:"credentialRef"`
-}
-
-type BackendCredentialRef struct {
-	Name string `json:"name"`
+	Type     string               `json:"type"`
+	Settings apiextensionsv1.JSON `json:"settings"`
 }
 
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="Type",type=string,JSONPath=`.spec.type`,description="Backend type"
-// +kubebuilder:printcolumn:name="CredentialRef",type=string,JSONPath=`.spec.credentialRef.name`,description="Secret reference for credentials"
 // +kubebuilder:printcolumn:name="Ready",type=string,JSONPath=`.status.conditions[?(@.type=="Ready")].status`,description="Ready status"
 // +kubebuilder:printcolumn:name="Message",type=string,JSONPath=`.status.conditions[?(@.type=="Ready")].message`,description="Status message"
 type BackendConfig struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
-
-	Spec   BackendConfigSpec   `json:"spec,omitempty"`
-	Status BackendConfigStatus `json:"status,omitempty"`
+	Spec              BackendConfigSpec   `json:"spec,omitempty"`
+	Status            BackendConfigStatus `json:"status,omitempty"`
 }
 
 // BackendConfigStatus holds observed state, including Ready condition and message

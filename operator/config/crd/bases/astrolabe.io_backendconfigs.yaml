@@ -19,10 +19,6 @@ spec:
       jsonPath: .spec.type
       name: Type
       type: string
-    - description: Secret reference for credentials
-      jsonPath: .spec.credentialRef.name
-      name: CredentialRef
-      type: string
     - description: Ready status
       jsonPath: .status.conditions[?(@.type=="Ready")].status
       name: Ready
@@ -53,17 +49,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: |-
-              BackendConfigSpec defines the desired state of BackendConfig
-              Generated from OpenAPI backen_config_spec.yaml
             properties:
-              credentialRef:
-                properties:
-                  name:
-                    type: string
-                required:
-                - name
-                type: object
               settings:
                 x-kubernetes-preserve-unknown-fields: true
               type:
@@ -84,7 +70,6 @@ spec:
                 - remote
                 type: string
             required:
-            - credentialRef
             - settings
             - type
             type: object

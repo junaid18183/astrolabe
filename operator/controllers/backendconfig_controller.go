@@ -7,10 +7,10 @@ import (
 	"strings"
 
 	astrolabev1 "github.com/junaid18183/astrolabe/api/v1"
+	// secret variable and related logic removed
 	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -35,8 +35,8 @@ func (r *BackendConfigReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 	}
 
 	// 1. Validate spec fields
-	if backendConfig.Spec.Type == "" || backendConfig.Spec.CredentialRef.Name == "" {
-		msg := "Missing required spec fields: type or credentialRef.name"
+	if backendConfig.Spec.Type == "" {
+		msg := "Missing required spec field: type"
 		logger.Error(nil, msg)
 		r.emitEvent(&backendConfig, corev1.EventTypeWarning, "ValidationError", msg)
 		return r.setStatus(ctx, &backendConfig, false, "ValidationError", msg), nil
@@ -71,60 +71,9 @@ func (r *BackendConfigReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 		}
 	}
 
-	// 3. Resolve credentialRef (direct Secret reference)
-	var secret corev1.Secret
-	if err := r.Get(ctx, types.NamespacedName{Name: backendConfig.Spec.CredentialRef.Name, Namespace: backendConfig.Namespace}, &secret); err != nil {
-		if kerrors.IsNotFound(err) {
-			msg := fmt.Sprintf("Secret '%s' not found for CredentialRef", backendConfig.Spec.CredentialRef.Name)
-			logger.Error(nil, msg)
-			r.emitEvent(&backendConfig, corev1.EventTypeWarning, "SecretNotFound", msg)
-			return r.setStatus(ctx, &backendConfig, false, "SecretNotFound", msg), nil
-		}
-		logger.Error(err, "Failed to get Secret for CredentialRef")
-		return ctrl.Result{}, err
-	}
+	// 3. (CredentialRef logic removed)
 
-	// 5. Validate Secret Content (example for s3)
-	if backendConfig.Spec.Type == "s3" {
-		missing := []string{}
-		if _, ok := secret.Data["AWS_ACCESS_KEY_ID"]; !ok {
-			missing = append(missing, "AWS_ACCESS_KEY_ID")
-		}
-		if _, ok := secret.Data["AWS_SECRET_ACCESS_KEY"]; !ok {
-			missing = append(missing, "AWS_SECRET_ACCESS_KEY")
-		}
-		if _, ok1 := secret.Data["AWS_DEFAULT_REGION"]; !ok1 {
-			if _, ok2 := secret.Data["AWS_REGION"]; !ok2 {
-				missing = append(missing, "AWS_DEFAULT_REGION or AWS_REGION")
-			}
-		}
-		if len(missing) > 0 {
-			msg := fmt.Sprintf("Missing required secret keys for s3 backend: %v", missing)
-			logger.Error(nil, msg)
-			r.emitEvent(&backendConfig, corev1.EventTypeWarning, "SecretValidationError", msg)
-			return r.setStatus(ctx, &backendConfig, false, "SecretValidationError", msg), nil
-		}
-	} else {
-		requiredSecretKeys := map[string][]string{
-			"azurerm": {"client_id", "client_secret", "tenant_id", "subscription_id"},
-			"gcs":     {"service_account.json"},
-			// Add more as needed
-		}
-		if keys, ok := requiredSecretKeys[backendConfig.Spec.Type]; ok {
-			missing := []string{}
-			for _, k := range keys {
-				if _, present := secret.Data[k]; !present {
-					missing = append(missing, k)
-				}
-			}
-			if len(missing) > 0 {
-				msg := fmt.Sprintf("Missing required secret keys for %s backend: %v", backendConfig.Spec.Type, missing)
-				logger.Error(nil, msg)
-				r.emitEvent(&backendConfig, corev1.EventTypeWarning, "SecretValidationError", msg)
-				return r.setStatus(ctx, &backendConfig, false, "SecretValidationError", msg), nil
-			}
-		}
-	}
+	// 5. Secret validation logic removed
 
 	// 6. Set Ready status
 	msg := "BackendConfig is valid and credentials verified"
@@ -177,7 +126,6 @@ func (r *BackendConfigReconciler) setStatus(ctx context.Context, bc *astrolabev1
 	_ = r.Status().Update(ctx, bc)
 	return ctrl.Result{}
 }
-
 func (r *BackendConfigReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&astrolabev1.BackendConfig{}).
