@@ -9,12 +9,11 @@ import (
 type StackSpec struct {
 	BackendRef    *StackBackendRef    `json:"backendRef"`
 	CredentialRef *StackCredentialRef `json:"credentialRef"`
-	Modules       []StackModule       `json:"modules"`
+	Modules       []StackModuleRef    `json:"modules"`
 }
 
-type StackModule struct {
-	ModuleID  string               `json:"moduleId"`
-	Name      string               `json:"name,omitempty"`
+type StackModuleRef struct {
+	Name      string               `json:"name"`
 	Variables apiextensionsv1.JSON `json:"variables,omitempty"`
 	DependsOn []string             `json:"dependsOn,omitempty"`
 }

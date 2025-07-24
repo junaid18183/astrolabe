@@ -61,14 +61,12 @@ spec:
                       items:
                         type: string
                       type: array
-                    moduleId:
-                      type: string
                     name:
                       type: string
                     variables:
                       x-kubernetes-preserve-unknown-fields: true
                   required:
-                  - moduleId
+                  - name
                   type: object
                 type: array
             required:
