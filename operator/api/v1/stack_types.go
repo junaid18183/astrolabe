@@ -37,6 +37,9 @@ type LinkedInput struct {
 // StackStatus defines the observed state of Stack
 type StackStatus struct {
 	Phase     string               `json:"phase,omitempty"`
+	Status    string               `json:"status,omitempty"`
+	Summary   string               `json:"summary,omitempty"`
+	Logs      string               `json:"logs,omitempty"`
 	Outputs   apiextensionsv1.JSON `json:"outputs,omitempty"`
 	Resources []StackResource      `json:"resources,omitempty"`
 	Events    []StackEvent         `json:"events,omitempty"`

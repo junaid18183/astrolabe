@@ -1,3 +1,4 @@
+---
 apiVersion: astrolabe.io/v1
 kind: BackendConfig
 metadata:

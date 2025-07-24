@@ -92,6 +92,8 @@ spec:
                   - type
                   type: object
                 type: array
+              logs:
+                type: string
               outputs:
                 x-kubernetes-preserve-unknown-fields: true
               phase:
@@ -114,6 +116,10 @@ spec:
                   - type
                   type: object
                 type: array
+              status:
+                type: string
+              summary:
+                type: string
             type: object
         type: object
     served: true

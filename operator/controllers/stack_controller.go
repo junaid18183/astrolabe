@@ -1,12 +1,16 @@
 package controllers
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
+	"time"
 
 	astrolabev1 "github.com/junaid18183/astrolabe/api/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -30,9 +34,11 @@ type StackReconciler struct {
 // +kubebuilder:rbac:groups=astrolabe.io,resources=backendconfigs;credentials;modules,verbs=get;list;watch
 // +kubebuilder:rbac:groups=core,resources=secrets,verbs=get;list;watch
 func (r *StackReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+	ctrl.Log.Info("Reconciling Stack", "name", req.NamespacedName)
 	//
 	var stack astrolabev1.Stack
 	if err := r.Get(ctx, req.NamespacedName, &stack); err != nil {
+		ctrl.Log.Info("Failed to get Stack resource", "error", err)
 		if k8serrors.IsNotFound(err) {
 			return ctrl.Result{}, nil
 		}
@@ -41,6 +47,7 @@ func (r *StackReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 
 	// If the Stack is being deleted, skip all processing and status updates
 	if stack.ObjectMeta.DeletionTimestamp != nil {
+		ctrl.Log.Info("Stack is being deleted", "name", stack.Name)
 		return r.handleDelete(ctx, &stack)
 	}
 
@@ -57,6 +64,7 @@ func (r *StackReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 
 	var backend astrolabev1.BackendConfig
 	if err := r.Get(ctx, client.ObjectKey{Namespace: stack.Namespace, Name: backendRef}, &backend); err != nil {
+		ctrl.Log.Info("Missing backend config", "backendRef", backendRef, "error", err)
 		r.setStackError(ctx, &stack, "MissingBackendConfig", err.Error())
 		return ctrl.Result{Requeue: true}, nil
 	}
@@ -64,6 +72,7 @@ func (r *StackReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 	var credSecret corev1.Secret
 	if credentialRef != "" {
 		if err := r.Get(ctx, client.ObjectKey{Namespace: stack.Namespace, Name: credentialRef}, &credSecret); err != nil {
+			ctrl.Log.Info("Missing credential secret", "credentialRef", credentialRef, "error", err)
 			r.setStackError(ctx, &stack, "MissingCredential", err.Error())
 			return ctrl.Result{Requeue: true}, nil
 		}
@@ -73,10 +82,12 @@ func (r *StackReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 	for i, ref := range moduleRefs {
 		var mod astrolabev1.Module
 		if err := r.Get(ctx, client.ObjectKey{Namespace: stack.Namespace, Name: ref}, &mod); err != nil {
+			ctrl.Log.Info("Missing module", "moduleRef", ref, "error", err)
 			r.setStackError(ctx, &stack, "MissingModule", err.Error())
 			return ctrl.Result{Requeue: true}, nil
 		}
 		if mod.Status.Inputs == nil {
+			ctrl.Log.Info("Module status.inputs missing", "module", ref)
 			r.setStackError(ctx, &stack, "ModuleUnpopulated", "Module status.inputs missing")
 			return ctrl.Result{Requeue: true}, nil
 		}
@@ -98,6 +109,7 @@ func (r *StackReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 			}
 		}
 		if len(missingVars) > 0 {
+			ctrl.Log.Info("Missing required module variables", "module", stackMod.Name, "missing", missingVars)
 			r.setStackError(ctx, &stack, "MissingModuleVariables", "Missing variables: "+strings.Join(missingVars, ", "))
 			return ctrl.Result{Requeue: true}, nil
 		}
@@ -132,10 +144,12 @@ func (r *StackReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 	steps := []string{"init", "plan"}
 	for _, step := range steps {
 		phase := strings.Title(step)
+		ctrl.Log.Info("Running terraform step", "step", step, "workDir", workDir)
 		r.setStackPhase(ctx, &stack, phase)
 		out, err := runTerraformStep(workDir, step, envVars)
 		r.appendStackLog(ctx, &stack, step, out)
 		if err != nil {
+			ctrl.Log.Info("Terraform step failed", "step", step, "error", err)
 			r.setStackError(ctx, &stack, "Terraform"+phase+"Error", err.Error())
 			return ctrl.Result{Requeue: true}, nil
 		}
@@ -143,6 +157,7 @@ func (r *StackReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 
 	outputs, resources, err := parseTerraformState(workDir)
 	if err != nil {
+		ctrl.Log.Info("Failed to parse terraform state", "error", err)
 		r.setStackError(ctx, &stack, "TerraformStateParseError", err.Error())
 		return ctrl.Result{Requeue: true}, nil
 	}
@@ -156,6 +171,7 @@ func (r *StackReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 
 	r.emitStackEvent(&stack, corev1.EventTypeNormal, "StackApplied", "Stack successfully applied and outputs/resources updated.")
 
+	ctrl.Log.Info("Stack reconciliation complete", "name", stack.Name)
 	return ctrl.Result{}, nil
 }
 
@@ -207,6 +223,14 @@ func (r *StackReconciler) handleDelete(ctx context.Context, stack *astrolabev1.S
 
 func (r *StackReconciler) setStackError(ctx context.Context, stack *astrolabev1.Stack, reason, msg string) {
 	stack.Status.Phase = "Error"
+	stack.Status.Status = reason
+	stack.Status.Summary = msg
+	stack.Status.Events = append(stack.Status.Events, astrolabev1.StackEvent{
+		Type:      "Error",
+		Reason:    reason,
+		Message:   msg,
+		Timestamp: time.Now().UTC().Format("2006-01-02T15:04:05Z07:00"),
+	})
 	_ = r.Status().Update(ctx, stack)
 }
 
@@ -216,12 +240,39 @@ func (r *StackReconciler) setStackPhase(ctx context.Context, stack *astrolabev1.
 }
 
 func (r *StackReconciler) appendStackLog(ctx context.Context, stack *astrolabev1.Stack, step, logStr string) {
-	// No-op: StackStatus.Logs does not exist
+	if stack.Status.Logs == "" {
+		stack.Status.Logs = step + ":\n" + logStr + "\n"
+	} else {
+		stack.Status.Logs += step + ":\n" + logStr + "\n"
+	}
+	_ = r.Status().Update(ctx, stack)
 }
 
 func runTerraformStep(workDir, step string, env []string) (string, error) {
-	// TODO: Run terraform command, return output and error
-	return "", nil
+	// Run terraform init or plan as a subprocess in workDir, with error handling
+	var cmd *exec.Cmd
+	if step == "init" {
+		cmd = exec.Command("terraform", "init", "-input=false")
+	} else if step == "plan" {
+		cmd = exec.Command("terraform", "plan", "-input=false", "-no-color")
+	} else {
+		return "", fmt.Errorf("unsupported terraform step: %s", step)
+	}
+	cmd.Dir = workDir
+	cmd.Env = append(os.Environ(), env...)
+	var outBuf, errBuf bytes.Buffer
+	cmd.Stdout = &outBuf
+	cmd.Stderr = &errBuf
+	err := cmd.Run()
+	output := outBuf.String() + errBuf.String()
+	if err != nil {
+		var exitErr *exec.ExitError
+		if errors.As(err, &exitErr) {
+			return output, fmt.Errorf("terraform %s failed with exit code %d: %s", step, exitErr.ExitCode(), output)
+		}
+		return output, fmt.Errorf("terraform %s failed: %w\nOutput: %s", step, err, output)
+	}
+	return output, nil
 }
 
 func renderBackendTf(backend astrolabev1.BackendConfig) string {
