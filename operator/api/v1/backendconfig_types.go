@@ -20,6 +20,7 @@ type BackendCredentialRef struct {
 }
 
 // +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="Type",type=string,JSONPath=`.spec.type`,description="Backend type"
 // +kubebuilder:printcolumn:name="CredentialRef",type=string,JSONPath=`.spec.credentialRef.name`,description="Secret reference for credentials"
 // +kubebuilder:printcolumn:name="Ready",type=string,JSONPath=`.status.conditions[?(@.type=="Ready")].status`,description="Ready status"
