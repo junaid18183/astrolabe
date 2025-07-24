@@ -85,24 +85,44 @@ func (r *BackendConfigReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 	}
 
 	// 5. Validate Secret Content (example for s3)
-	requiredSecretKeys := map[string][]string{
-		"s3":      {"aws_access_key_id", "aws_secret_access_key"},
-		"azurerm": {"client_id", "client_secret", "tenant_id", "subscription_id"},
-		"gcs":     {"service_account.json"},
-		// Add more as needed
-	}
-	if keys, ok := requiredSecretKeys[backendConfig.Spec.Type]; ok {
+	if backendConfig.Spec.Type == "s3" {
 		missing := []string{}
-		for _, k := range keys {
-			if _, present := secret.Data[k]; !present {
-				missing = append(missing, k)
+		if _, ok := secret.Data["AWS_ACCESS_KEY_ID"]; !ok {
+			missing = append(missing, "AWS_ACCESS_KEY_ID")
+		}
+		if _, ok := secret.Data["AWS_SECRET_ACCESS_KEY"]; !ok {
+			missing = append(missing, "AWS_SECRET_ACCESS_KEY")
+		}
+		if _, ok1 := secret.Data["AWS_DEFAULT_REGION"]; !ok1 {
+			if _, ok2 := secret.Data["AWS_REGION"]; !ok2 {
+				missing = append(missing, "AWS_DEFAULT_REGION or AWS_REGION")
 			}
 		}
 		if len(missing) > 0 {
-			msg := fmt.Sprintf("Missing required secret keys for %s backend: %v", backendConfig.Spec.Type, missing)
+			msg := fmt.Sprintf("Missing required secret keys for s3 backend: %v", missing)
 			logger.Error(nil, msg)
 			r.emitEvent(&backendConfig, corev1.EventTypeWarning, "SecretValidationError", msg)
 			return r.setStatus(ctx, &backendConfig, false, "SecretValidationError", msg), nil
+		}
+	} else {
+		requiredSecretKeys := map[string][]string{
+			"azurerm": {"client_id", "client_secret", "tenant_id", "subscription_id"},
+			"gcs":     {"service_account.json"},
+			// Add more as needed
+		}
+		if keys, ok := requiredSecretKeys[backendConfig.Spec.Type]; ok {
+			missing := []string{}
+			for _, k := range keys {
+				if _, present := secret.Data[k]; !present {
+					missing = append(missing, k)
+				}
+			}
+			if len(missing) > 0 {
+				msg := fmt.Sprintf("Missing required secret keys for %s backend: %v", backendConfig.Spec.Type, missing)
+				logger.Error(nil, msg)
+				r.emitEvent(&backendConfig, corev1.EventTypeWarning, "SecretValidationError", msg)
+				return r.setStatus(ctx, &backendConfig, false, "SecretValidationError", msg), nil
+			}
 		}
 	}
 
