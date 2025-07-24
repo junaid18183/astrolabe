@@ -20,11 +20,22 @@ type BackendCredentialRef struct {
 }
 
 // +kubebuilder:object:root=true
+// +kubebuilder:printcolumn:name="Type",type=string,JSONPath=`.spec.type`,description="Backend type"
+// +kubebuilder:printcolumn:name="CredentialRef",type=string,JSONPath=`.spec.credentialRef.name`,description="Secret reference for credentials"
+// +kubebuilder:printcolumn:name="Ready",type=string,JSONPath=`.status.conditions[?(@.type=="Ready")].status`,description="Ready status"
+// +kubebuilder:printcolumn:name="Message",type=string,JSONPath=`.status.conditions[?(@.type=="Ready")].message`,description="Status message"
 type BackendConfig struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec BackendConfigSpec `json:"spec,omitempty"`
+	Spec   BackendConfigSpec   `json:"spec,omitempty"`
+	Status BackendConfigStatus `json:"status,omitempty"`
+}
+
+// BackendConfigStatus holds observed state, including Ready condition and message
+type BackendConfigStatus struct {
+	Conditions []metav1.Condition `json:"conditions,omitempty"`
+	Message    string             `json:"message,omitempty"`
 }
 
 // +kubebuilder:object:root=true
