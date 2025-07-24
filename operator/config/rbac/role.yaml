@@ -5,6 +5,23 @@ metadata:
   name: manager-role
 rules:
 - apiGroups:
+  - ""
+  resources:
+  - secrets
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - astrolabe.io
+  resources:
+  - backendconfigs
+  - credentials
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - astrolabe.io
   resources:
   - modules
@@ -18,7 +35,26 @@ rules:
   - astrolabe.io
   resources:
   - modules/status
+  - stacks/status
   verbs:
   - get
   - patch
+  - update
+- apiGroups:
+  - astrolabe.io
+  resources:
+  - stacks
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - astrolabe.io
+  resources:
+  - stacks/finalizers
+  verbs:
   - update

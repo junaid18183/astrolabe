@@ -71,6 +71,7 @@ type StackEvent struct {
 }
 
 // +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="Phase",type=string,JSONPath=".status.phase",description="Stack phase"
 // +kubebuilder:printcolumn:name="Status",type=string,JSONPath=".status.status",description="Stack status"
 // +kubebuilder:printcolumn:name="Summary",type=string,JSONPath=".status.summary",description="Stack summary"

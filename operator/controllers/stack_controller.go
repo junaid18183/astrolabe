@@ -33,6 +33,7 @@ type StackReconciler struct {
 // +kubebuilder:rbac:groups=astrolabe.io,resources=stacks/finalizers,verbs=update
 // +kubebuilder:rbac:groups=astrolabe.io,resources=backendconfigs;credentials;modules,verbs=get;list;watch
 // +kubebuilder:rbac:groups=core,resources=secrets,verbs=get;list;watch
+
 func (r *StackReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	ctrl.Log.Info("Reconciling Stack", "name", req.NamespacedName)
 	//
@@ -44,6 +45,18 @@ func (r *StackReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 		}
 		return ctrl.Result{}, err
 	}
+
+	// Set Reconciling phase at the start
+	stack.Status.Phase = "Reconciling"
+	stack.Status.Status = "InProgress"
+	stack.Status.Summary = "Reconciling stack"
+	stack.Status.Events = append(stack.Status.Events, astrolabev1.StackEvent{
+		Type:      "Normal",
+		Reason:    "Reconciling",
+		Message:   "Reconciling stack",
+		Timestamp: time.Now().UTC().Format("2006-01-02T15:04:05Z07:00"),
+	})
+	_ = r.Status().Update(ctx, &stack)
 
 	// If the Stack is being deleted, skip all processing and status updates
 	if stack.ObjectMeta.DeletionTimestamp != nil {
@@ -118,6 +131,7 @@ func (r *StackReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 	workDir := filepath.Join("/tmp", "astrolabe", stack.Namespace, stack.Name)
 	os.MkdirAll(workDir, 0700)
 	writeFile(filepath.Join(workDir, "backend.tf"), renderBackendTf(backend))
+
 	writeFile(filepath.Join(workDir, "main.tf"), renderMainTf(stack, modules))
 
 	for i, mod := range modules {
@@ -231,12 +245,16 @@ func (r *StackReconciler) setStackError(ctx context.Context, stack *astrolabev1.
 		Message:   msg,
 		Timestamp: time.Now().UTC().Format("2006-01-02T15:04:05Z07:00"),
 	})
-	_ = r.Status().Update(ctx, stack)
+	if err := r.Status().Update(ctx, stack); err != nil {
+		ctrl.Log.Info("Failed to update stack status in setStackError", "error", err)
+	}
 }
 
 func (r *StackReconciler) setStackPhase(ctx context.Context, stack *astrolabev1.Stack, phase string) {
 	stack.Status.Phase = phase
-	_ = r.Status().Update(ctx, stack)
+	if err := r.Status().Update(ctx, stack); err != nil {
+		ctrl.Log.Info("Failed to update stack status in setStackPhase", "error", err)
+	}
 }
 
 func (r *StackReconciler) appendStackLog(ctx context.Context, stack *astrolabev1.Stack, step, logStr string) {
@@ -245,7 +263,25 @@ func (r *StackReconciler) appendStackLog(ctx context.Context, stack *astrolabev1
 	} else {
 		stack.Status.Logs += step + ":\n" + logStr + "\n"
 	}
-	_ = r.Status().Update(ctx, stack)
+	if err := r.Status().Update(ctx, stack); err != nil {
+		ctrl.Log.Info("Failed to update stack status in appendStackLog", "error", err)
+	}
+}
+
+// setStackSuccess sets status fields and appends a success event
+func (r *StackReconciler) setStackSuccess(ctx context.Context, stack *astrolabev1.Stack, msg string) {
+	stack.Status.Phase = "Ready"
+	stack.Status.Status = "Success"
+	stack.Status.Summary = msg
+	stack.Status.Events = append(stack.Status.Events, astrolabev1.StackEvent{
+		Type:      "Normal",
+		Reason:    "StackReady",
+		Message:   msg,
+		Timestamp: time.Now().UTC().Format("2006-01-02T15:04:05Z07:00"),
+	})
+	if err := r.Status().Update(ctx, stack); err != nil {
+		ctrl.Log.Info("Failed to update stack status in setStackSuccess", "error", err)
+	}
 }
 
 func runTerraformStep(workDir, step string, env []string) (string, error) {
