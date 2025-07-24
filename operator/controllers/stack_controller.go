@@ -6,6 +6,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"k8s.io/client-go/tools/record"
+	"math"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -25,7 +27,8 @@ import (
 // StackReconciler reconciles a Stack object
 type StackReconciler struct {
 	client.Client
-	Scheme *runtime.Scheme
+	Scheme   *runtime.Scheme
+	Recorder record.EventRecorder
 }
 
 // +kubebuilder:rbac:groups=astrolabe.io,resources=stacks,verbs=get;list;watch;create;update;patch;delete
@@ -36,7 +39,6 @@ type StackReconciler struct {
 
 func (r *StackReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	ctrl.Log.Info("Reconciling Stack", "name", req.NamespacedName)
-	//
 	var stack astrolabev1.Stack
 	if err := r.Get(ctx, req.NamespacedName, &stack); err != nil {
 		ctrl.Log.Info("Failed to get Stack resource", "error", err)
@@ -47,16 +49,18 @@ func (r *StackReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 	}
 
 	// Set Reconciling phase at the start
-	stack.Status.Phase = "Reconciling"
-	stack.Status.Status = "InProgress"
-	stack.Status.Summary = "Reconciling stack"
-	stack.Status.Events = append(stack.Status.Events, astrolabev1.StackEvent{
-		Type:      "Normal",
-		Reason:    "Reconciling",
-		Message:   "Reconciling stack",
-		Timestamp: time.Now().UTC().Format("2006-01-02T15:04:05Z07:00"),
+	r.updateStatusWithRetry(ctx, &stack, func(s *astrolabev1.Stack) {
+		s.Status.Phase = "Reconciling"
+		s.Status.Status = "InProgress"
+		s.Status.Summary = "Reconciling stack"
+		s.Status.Events = append(s.Status.Events, astrolabev1.StackEvent{
+			Type:      "Normal",
+			Reason:    "Reconciling",
+			Message:   "Reconciling stack",
+			Timestamp: time.Now().UTC().Format("2006-01-02T15:04:05Z07:00"),
+		})
 	})
-	_ = r.Status().Update(ctx, &stack)
+	r.emitStackEvent(&stack, corev1.EventTypeNormal, "Reconciling", "Reconciling stack")
 
 	// If the Stack is being deleted, skip all processing and status updates
 	if stack.ObjectMeta.DeletionTimestamp != nil {
@@ -190,11 +194,42 @@ func (r *StackReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 }
 
 func (r *StackReconciler) emitStackEvent(stack *astrolabev1.Stack, eventtype, reason, message string) {
-	if r.Scheme == nil {
-		return
+	if r.Recorder != nil {
+		r.Recorder.Event(stack, eventtype, reason, message)
+	} else {
+		ctrl.Log.WithName("event").WithValues("stack", stack.Name).Info("Event", "type", eventtype, "reason", reason, "message", message)
 	}
-	recorder := ctrl.Log.WithName("event").WithValues("stack", stack.Name)
-	recorder.Info("Event", "type", eventtype, "reason", reason, "message", message)
+}
+
+// updateStatusWithRetry updates status with exponential backoff and confirmation.
+func (r *StackReconciler) updateStatusWithRetry(ctx context.Context, stack *astrolabev1.Stack, updateFn func(*astrolabev1.Stack)) {
+	var getResourceErr error
+	var updateErr error
+	namespacedName := client.ObjectKeyFromObject(stack)
+	for i := 0; i < 7; i++ {
+		if i > 0 {
+			n := math.Pow(2, float64(i+3))
+			backoffTime := math.Ceil(.5 * (n - 1))
+			time.Sleep(time.Duration(backoffTime) * time.Millisecond)
+			getResourceErr = r.Get(ctx, namespacedName, stack)
+			if getResourceErr != nil {
+				ctrl.Log.Info("Failed to get latest stack while updating status", "error", getResourceErr)
+				continue
+			}
+		}
+		updateFn(stack)
+		updateErr = r.Status().Update(ctx, stack)
+		if updateErr == nil {
+			break
+		}
+		if k8serrors.IsConflict(updateErr) {
+			continue
+		}
+		ctrl.Log.Info("Retrying to update status because an error has occurred while updating", "error", updateErr)
+	}
+	if updateErr != nil {
+		ctrl.Log.Info("Failed to update stack status after retries", "error", updateErr)
+	}
 }
 
 func parseTerraformState(workDir string) (map[string]interface{}, []string, error) {
