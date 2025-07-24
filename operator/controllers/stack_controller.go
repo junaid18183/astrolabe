@@ -236,51 +236,100 @@ func (r *StackReconciler) handleDelete(ctx context.Context, stack *astrolabev1.S
 }
 
 func (r *StackReconciler) setStackError(ctx context.Context, stack *astrolabev1.Stack, reason, msg string) {
-	stack.Status.Phase = "Error"
-	stack.Status.Status = reason
-	stack.Status.Summary = msg
-	stack.Status.Events = append(stack.Status.Events, astrolabev1.StackEvent{
-		Type:      "Error",
-		Reason:    reason,
-		Message:   msg,
-		Timestamp: time.Now().UTC().Format("2006-01-02T15:04:05Z07:00"),
-	})
-	if err := r.Status().Update(ctx, stack); err != nil {
+	for i := 0; i < 3; i++ {
+		stack.Status.Phase = "Error"
+		stack.Status.Status = reason
+		stack.Status.Summary = msg
+		stack.Status.Events = append(stack.Status.Events, astrolabev1.StackEvent{
+			Type:      "Error",
+			Reason:    reason,
+			Message:   msg,
+			Timestamp: time.Now().UTC().Format("2006-01-02T15:04:05Z07:00"),
+		})
+		err := r.Status().Update(ctx, stack)
+		if err == nil {
+			return
+		}
+		if k8serrors.IsConflict(err) {
+			// Re-fetch and retry
+			var latest astrolabev1.Stack
+			if getErr := r.Get(ctx, client.ObjectKeyFromObject(stack), &latest); getErr == nil {
+				stack = &latest
+				continue
+			}
+		}
 		ctrl.Log.Info("Failed to update stack status in setStackError", "error", err)
+		return
 	}
 }
 
 func (r *StackReconciler) setStackPhase(ctx context.Context, stack *astrolabev1.Stack, phase string) {
-	stack.Status.Phase = phase
-	if err := r.Status().Update(ctx, stack); err != nil {
+	for i := 0; i < 3; i++ {
+		stack.Status.Phase = phase
+		err := r.Status().Update(ctx, stack)
+		if err == nil {
+			return
+		}
+		if k8serrors.IsConflict(err) {
+			var latest astrolabev1.Stack
+			if getErr := r.Get(ctx, client.ObjectKeyFromObject(stack), &latest); getErr == nil {
+				stack = &latest
+				continue
+			}
+		}
 		ctrl.Log.Info("Failed to update stack status in setStackPhase", "error", err)
+		return
 	}
 }
 
 func (r *StackReconciler) appendStackLog(ctx context.Context, stack *astrolabev1.Stack, step, logStr string) {
-	if stack.Status.Logs == "" {
-		stack.Status.Logs = step + ":\n" + logStr + "\n"
-	} else {
-		stack.Status.Logs += step + ":\n" + logStr + "\n"
-	}
-	if err := r.Status().Update(ctx, stack); err != nil {
+	for i := 0; i < 3; i++ {
+		if stack.Status.Logs == "" {
+			stack.Status.Logs = step + ":\n" + logStr + "\n"
+		} else {
+			stack.Status.Logs += step + ":\n" + logStr + "\n"
+		}
+		err := r.Status().Update(ctx, stack)
+		if err == nil {
+			return
+		}
+		if k8serrors.IsConflict(err) {
+			var latest astrolabev1.Stack
+			if getErr := r.Get(ctx, client.ObjectKeyFromObject(stack), &latest); getErr == nil {
+				stack = &latest
+				continue
+			}
+		}
 		ctrl.Log.Info("Failed to update stack status in appendStackLog", "error", err)
+		return
 	}
 }
 
 // setStackSuccess sets status fields and appends a success event
 func (r *StackReconciler) setStackSuccess(ctx context.Context, stack *astrolabev1.Stack, msg string) {
-	stack.Status.Phase = "Ready"
-	stack.Status.Status = "Success"
-	stack.Status.Summary = msg
-	stack.Status.Events = append(stack.Status.Events, astrolabev1.StackEvent{
-		Type:      "Normal",
-		Reason:    "StackReady",
-		Message:   msg,
-		Timestamp: time.Now().UTC().Format("2006-01-02T15:04:05Z07:00"),
-	})
-	if err := r.Status().Update(ctx, stack); err != nil {
+	for i := 0; i < 3; i++ {
+		stack.Status.Phase = "Ready"
+		stack.Status.Status = "Success"
+		stack.Status.Summary = msg
+		stack.Status.Events = append(stack.Status.Events, astrolabev1.StackEvent{
+			Type:      "Normal",
+			Reason:    "StackReady",
+			Message:   msg,
+			Timestamp: time.Now().UTC().Format("2006-01-02T15:04:05Z07:00"),
+		})
+		err := r.Status().Update(ctx, stack)
+		if err == nil {
+			return
+		}
+		if k8serrors.IsConflict(err) {
+			var latest astrolabev1.Stack
+			if getErr := r.Get(ctx, client.ObjectKeyFromObject(stack), &latest); getErr == nil {
+				stack = &latest
+				continue
+			}
+		}
 		ctrl.Log.Info("Failed to update stack status in setStackSuccess", "error", err)
+		return
 	}
 }
 
