@@ -123,7 +123,7 @@ func (r *StackReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 
 	workDir := filepath.Join("/tmp", "astrolabe", stack.Namespace, stack.Name)
 	os.MkdirAll(workDir, 0700)
-	writeFile(filepath.Join(workDir, "backend.tf"), renderBackendTf(backend))
+	writeFile(filepath.Join(workDir, "backend.tf"), renderBackendTf(backend, stack.Name))
 
 	writeFile(filepath.Join(workDir, "main.tf"), renderMainTf(stack, modules))
 
@@ -387,7 +387,7 @@ func runTerraformStep(workDir, step string, env []string) (string, error) {
 	return output, nil
 }
 
-func renderBackendTf(backend astrolabev1.BackendConfig) string {
+func renderBackendTf(backend astrolabev1.BackendConfig, stackName string) string {
 	backendType := backend.Spec.Type
 	settings := backend.Spec.Settings
 	var sb strings.Builder
@@ -397,6 +397,12 @@ func renderBackendTf(backend astrolabev1.BackendConfig) string {
 		_ = json.Unmarshal(settings.Raw, &settingsMap)
 	} else {
 		settingsMap = map[string]interface{}{}
+	}
+	// For s3 and azurerm backends, ensure 'key' is set to 'astrolabe/<stackName>.tfstate' if not present
+	if backendType == "s3" || backendType == "azurerm" {
+		if _, ok := settingsMap["key"]; !ok {
+			settingsMap["key"] = fmt.Sprintf("astrolabe/%s.tfstate", stackName)
+		}
 	}
 	for k, v := range settingsMap {
 		// Render string values with quotes, bool/numeric as is

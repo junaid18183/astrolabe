@@ -76,7 +76,7 @@ func (r *BackendConfigReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 	// 5. Secret validation logic removed
 
 	// 6. Set Ready status
-	msg := "BackendConfig is valid and credentials verified"
+	msg := "BackendConfig is valid and ready"
 	logger.Info(msg)
 	r.emitEvent(&backendConfig, corev1.EventTypeNormal, "Ready", msg)
 	return r.setStatus(ctx, &backendConfig, true, "Ready", msg), nil
