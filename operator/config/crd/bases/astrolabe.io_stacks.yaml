@@ -15,26 +15,30 @@ spec:
   scope: Namespaced
   versions:
   - additionalPrinterColumns:
+    - description: Name of the stack
+      jsonPath: .metadata.name
+      name: NAME
+      type: string
+    - description: Module names (comma-separated)
+      jsonPath: .spec.modules[*].name
+      name: MODULES
+      type: string
     - description: Stack phase
       jsonPath: .status.phase
-      name: Phase
+      name: PHASE
       type: string
     - description: Stack status
       jsonPath: .status.status
-      name: Status
+      name: STATUS
       type: string
-    - description: Stack summary
-      jsonPath: .status.summary
-      name: Summary
-      type: string
-    - description: Backend reference name
-      jsonPath: .spec.backendRef.name
-      name: Backend
-      type: string
-    - description: Number of modules
-      jsonPath: .spec.modules | length(@)
-      name: Modules
-      type: integer
+    - description: Stack is applied and synced
+      jsonPath: .status.ready
+      name: READY
+      type: boolean
+    - description: Age of the stack
+      jsonPath: .metadata.creationTimestamp
+      name: AGE
+      type: date
     name: v1
     schema:
       openAPIV3Schema:
@@ -101,6 +105,8 @@ spec:
                 x-kubernetes-preserve-unknown-fields: true
               phase:
                 type: string
+              ready:
+                type: boolean
               resources:
                 items:
                   properties:

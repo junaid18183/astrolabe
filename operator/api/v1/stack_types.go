@@ -41,6 +41,7 @@ type StackStatus struct {
 	Summary   string               `json:"summary,omitempty"`
 	Outputs   apiextensionsv1.JSON `json:"outputs,omitempty"`
 	Resources []StackResource      `json:"resources,omitempty"`
+	Ready     bool                 `json:"ready,omitempty"`
 }
 
 type StackResource struct {
@@ -63,11 +64,12 @@ type StackApply struct {
 
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
-// +kubebuilder:printcolumn:name="Phase",type=string,JSONPath=".status.phase",description="Stack phase"
-// +kubebuilder:printcolumn:name="Status",type=string,JSONPath=".status.status",description="Stack status"
-// +kubebuilder:printcolumn:name="Summary",type=string,JSONPath=".status.summary",description="Stack summary"
-// +kubebuilder:printcolumn:name="Backend",type=string,JSONPath=".spec.backendRef.name",description="Backend reference name"
-// +kubebuilder:printcolumn:name="Modules",type=integer,JSONPath=".spec.modules | length(@)",description="Number of modules"
+// +kubebuilder:printcolumn:name="NAME",type=string,JSONPath=".metadata.name",description="Name of the stack"
+// +kubebuilder:printcolumn:name="MODULES",type=string,JSONPath=".spec.modules[*].name",description="Module names (comma-separated)"
+// +kubebuilder:printcolumn:name="PHASE",type=string,JSONPath=".status.phase",description="Stack phase"
+// +kubebuilder:printcolumn:name="STATUS",type=string,JSONPath=".status.status",description="Stack status"
+// +kubebuilder:printcolumn:name="READY",type=boolean,JSONPath=".status.ready",description="Stack is applied and synced"
+// +kubebuilder:printcolumn:name="AGE",type=date,JSONPath=".metadata.creationTimestamp",description="Age of the stack"
 type Stack struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

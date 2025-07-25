@@ -182,7 +182,6 @@ func (r *StackReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 		stack.Status.Resources[i] = astrolabev1.StackResource{Name: rname}
 	}
 
-
 	// Set phase to 'Applied' and mark Ready true
 	r.setStackPhase(ctx, &stack, "Applied")
 	stack.Status.Phase = "Applied"

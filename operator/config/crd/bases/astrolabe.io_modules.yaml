@@ -15,18 +15,26 @@ spec:
   scope: Namespaced
   versions:
   - additionalPrinterColumns:
-    - jsonPath: .spec.source.type
+    - description: Module source type
+      jsonPath: .spec.source.type
       name: SOURCETYPE
       type: string
-    - jsonPath: .spec.source.url
+    - description: Module source URL
+      jsonPath: .spec.source.url
       name: SOURCEURL
       type: string
-    - jsonPath: .spec.source.version
+    - description: Module version
+      jsonPath: .spec.source.version
       name: VERSION
       type: string
-    - jsonPath: .status.conditions[?(@.type=="Ready")].status
+    - description: Ready status
+      jsonPath: .status.conditions[?(@.type=='Ready')].status
       name: READY
       type: string
+    - description: Age of the resource
+      jsonPath: .metadata.creationTimestamp
+      name: AGE
+      type: date
     name: v1
     schema:
       openAPIV3Schema:

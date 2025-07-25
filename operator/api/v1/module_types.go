@@ -101,10 +101,11 @@ type ModuleCondition struct {
 
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
-// +kubebuilder:printcolumn:name="SOURCETYPE",type=string,JSONPath=".spec.source.type"
-// +kubebuilder:printcolumn:name="SOURCEURL",type=string,JSONPath=".spec.source.url"
-// +kubebuilder:printcolumn:name="VERSION",type=string,JSONPath=".spec.source.version"
-// +kubebuilder:printcolumn:name="READY",type=string,JSONPath=".status.conditions[?(@.type==\"Ready\")].status"
+// +kubebuilder:printcolumn:name="SOURCETYPE",type=string,JSONPath=".spec.source.type",description="Module source type"
+// +kubebuilder:printcolumn:name="SOURCEURL",type=string,JSONPath=".spec.source.url",description="Module source URL"
+// +kubebuilder:printcolumn:name="VERSION",type=string,JSONPath=".spec.source.version",description="Module version"
+// +kubebuilder:printcolumn:name="READY",type=string,JSONPath=".status.conditions[?(@.type=='Ready')].status",description="Ready status"
+// +kubebuilder:printcolumn:name="AGE",type=date,JSONPath=".metadata.creationTimestamp",description="Age of the resource"
 
 // Module is the Schema for the modules API.
 type Module struct {

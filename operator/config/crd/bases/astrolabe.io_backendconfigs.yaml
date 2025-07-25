@@ -17,16 +17,20 @@ spec:
   - additionalPrinterColumns:
     - description: Backend type
       jsonPath: .spec.type
-      name: Type
+      name: TYPE
       type: string
     - description: Ready status
       jsonPath: .status.conditions[?(@.type=="Ready")].status
-      name: Ready
+      name: READY
       type: string
     - description: Status message
       jsonPath: .status.conditions[?(@.type=="Ready")].message
-      name: Message
+      name: MESSAGE
       type: string
+    - description: Age of the resource
+      jsonPath: .metadata.creationTimestamp
+      name: AGE
+      type: date
     name: v1
     schema:
       openAPIV3Schema:
