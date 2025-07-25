@@ -48,6 +48,12 @@ func (r *StackReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 		return ctrl.Result{}, err
 	}
 
+	// Early return if Stack is already in terminal state
+	if stack.Status.Phase == "Ready" || stack.Status.Status == "Success" {
+		ctrl.Log.Info("Stack is already in terminal state, skipping reconciliation", "name", stack.Name, "phase", stack.Status.Phase, "status", stack.Status.Status)
+		return ctrl.Result{}, nil
+	}
+
 	// Set Reconciling phase at the start (event emission handled in setStackPhase)
 	r.setStackPhase(ctx, &stack, "Reconciling")
 
@@ -147,12 +153,13 @@ func (r *StackReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 		}
 	}
 
-	// steps := []string{"init", "plan", "apply"}
-	steps := []string{"init", "plan"}
+	steps := []string{"init", "plan", "apply"}
 	for _, step := range steps {
 		phase := strings.Title(step)
 		ctrl.Log.Info("Running terraform step", "step", step, "workDir", workDir)
-		r.setStackPhase(ctx, &stack, phase)
+		if step != "apply" {
+			r.setStackPhase(ctx, &stack, phase)
+		}
 		out, err := runTerraformStep(workDir, step, envVars)
 		r.appendStackLog(ctx, &stack, step, out)
 		if err != nil {
@@ -174,7 +181,16 @@ func (r *StackReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 	for i, rname := range resources {
 		stack.Status.Resources[i] = astrolabev1.StackResource{Name: rname}
 	}
+
+
+	// Set phase to 'Applied' and mark Ready true
 	r.setStackPhase(ctx, &stack, "Applied")
+	stack.Status.Phase = "Applied"
+	stack.Status.Status = "Success"
+	stack.Status.Summary = "Stack successfully applied and outputs/resources updated."
+	stack.Status.Ready = true
+	// Update status in API
+	_ = r.Status().Update(ctx, &stack)
 
 	ctrl.Log.Info("Stack reconciliation complete", "name", stack.Name)
 	return ctrl.Result{}, nil
@@ -367,6 +383,8 @@ func runTerraformStep(workDir, step string, env []string) (string, error) {
 		cmd = exec.Command("terraform", "init", "-input=false")
 	} else if step == "plan" {
 		cmd = exec.Command("terraform", "plan", "-input=false", "-no-color")
+	} else if step == "apply" {
+		cmd = exec.Command("terraform", "apply", "-auto-approve", "-input=false", "-no-color")
 	} else {
 		return "", fmt.Errorf("unsupported terraform step: %s", step)
 	}
