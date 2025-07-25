@@ -38,5 +38,5 @@ var (
 func init() {
 	SchemeBuilder.Register(&Module{}, &ModuleList{})
 	SchemeBuilder.Register(&Stack{}, &StackList{})
-	SchemeBuilder.Register(&BackendConfig{}, &BackendConfigList{})
+	// BackendConfig and BackendConfigList registration removed
 }

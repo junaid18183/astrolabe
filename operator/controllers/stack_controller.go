@@ -63,7 +63,6 @@ func (r *StackReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 		return r.handleDelete(ctx, &stack)
 	}
 
-	backendRef := stack.Spec.BackendRef.Name
 	credentialRef := ""
 	if stack.Spec.CredentialRef != nil {
 		credentialRef = stack.Spec.CredentialRef.Name
@@ -74,12 +73,8 @@ func (r *StackReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 		moduleRefs[i] = m.Name
 	}
 
-	var backend astrolabev1.BackendConfig
-	if err := r.Get(ctx, client.ObjectKey{Namespace: stack.Namespace, Name: backendRef}, &backend); err != nil {
-		ctrl.Log.Info("Missing backend config", "backendRef", backendRef, "error", err)
-		r.setStackError(ctx, &stack, "MissingBackendConfig", err.Error())
-		return ctrl.Result{Requeue: true}, nil
-	}
+	// Use backend config directly from StackSpec
+	backend := stack.Spec.BackendConfig
 
 	var credSecret corev1.Secret
 	if credentialRef != "" {
@@ -103,10 +98,6 @@ func (r *StackReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 			r.setStackError(ctx, &stack, "ModuleUnpopulated", "Module status.inputs missing")
 			return ctrl.Result{Requeue: true}, nil
 		}
-		modules[i] = mod
-	}
-
-	for i, mod := range modules {
 		stackMod := stack.Spec.Modules[i]
 		missingVars := []string{}
 		var variables map[string]interface{}
@@ -121,10 +112,11 @@ func (r *StackReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 			}
 		}
 		if len(missingVars) > 0 {
-			ctrl.Log.Info("Missing required module variables", "module", stackMod.Name, "missing", missingVars)
-			r.setStackError(ctx, &stack, "MissingModuleVariables", "Missing variables: "+strings.Join(missingVars, ", "))
+			ctrl.Log.Info("Missing required variables for module", "module", mod.Name, "missing", missingVars)
+			r.setStackError(ctx, &stack, "MissingVariables", fmt.Sprintf("Module %s missing variables: %v", mod.Name, missingVars))
 			return ctrl.Result{Requeue: true}, nil
 		}
+		modules[i] = mod
 	}
 
 	workDir := filepath.Join("/tmp", "astrolabe", stack.Namespace, stack.Name)
@@ -403,9 +395,9 @@ func renderOutputsTf(modules []astrolabev1.Module) string {
 	return sb.String()
 }
 
-func renderBackendTf(backend astrolabev1.BackendConfig, stackName string) string {
-	backendType := backend.Spec.Type
-	settings := backend.Spec.Settings
+func renderBackendTf(backend astrolabev1.BackendConfigSpec, stackName string) string {
+	backendType := backend.Type
+	settings := backend.Settings
 	var sb strings.Builder
 	sb.WriteString(fmt.Sprintf("terraform {\n  backend \"%s\" {\n", backendType))
 	var settingsMap map[string]interface{}

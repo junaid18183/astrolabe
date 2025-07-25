@@ -63,13 +63,17 @@ spec:
           spec:
             description: StackSpec defines the desired state of Stack
             properties:
-              backendRef:
-                description: StackBackendRef matches backendRef in stack.yaml
+              backendConfig:
+                description: BackendConfigSpec defines the desired state of BackendConfig
+                  (inlined for Stack)
                 properties:
-                  name:
+                  settings:
+                    x-kubernetes-preserve-unknown-fields: true
+                  type:
                     type: string
                 required:
-                - name
+                - settings
+                - type
                 type: object
               credentialRef:
                 description: StackCredentialRef matches CredentialRef in stack.yaml
@@ -95,7 +99,7 @@ spec:
                   type: object
                 type: array
             required:
-            - backendRef
+            - backendConfig
             - modules
             type: object
           status:

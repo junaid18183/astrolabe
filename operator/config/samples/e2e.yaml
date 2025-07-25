@@ -1,12 +1,20 @@
 ---
 apiVersion: astrolabe.io/v1
-kind: BackendConfig
+kind: Stack
 metadata:
-  name: local-backend
+  name: random-hello
 spec:
-  type: local
-  settings:
-    path: "terraform.tfstate"
+  backendConfig:
+    type: local
+    settings:
+      path: "terraform.tfstate"
+  modules:
+    - name: hello
+      variables:
+        some_key: "astrolabe"
+        hellos:
+          hello: "Hello, Astrolabe!"
+          second_hello: "Hi from Juned!"
 ---
 apiVersion: astrolabe.io/v1
 kind: Module
@@ -17,19 +25,4 @@ spec:
     type: git
     url: "https://github.com/joatmon08/terraform-random-hello.git"
     version: "v6.0.0"
----
-apiVersion: astrolabe.io/v1
-kind: Stack
-metadata:
-  name: random-hello
-spec:
-  backendRef:
-    name: local-backend
-  modules:
-    - name: hello
-      variables:
-        some_key: "astrolabe"
-        hellos:
-          hello: "Hello, Astrolabe!"
-          second_hello: "Hi from Juned!"
 ---

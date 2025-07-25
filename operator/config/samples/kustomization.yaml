@@ -1,6 +1,4 @@
 ## Append samples of your project ##
 resources:
-- module.yaml
-- backendconfig.yaml
-- stack.yaml
+  # backendconfig.yaml removed
 # +kubebuilder:scaffold:manifestskustomizesamples

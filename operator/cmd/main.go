@@ -198,12 +198,7 @@ func main() {
 	}
 
 	// Register BackendConfig controller
-	if err = (&controllers.BackendConfigReconciler{
-		Client: mgr.GetClient(),
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "BackendConfig")
-		os.Exit(1)
-	}
+	// BackendConfigReconciler setup removed
 
 	// Register Stack controller
 	if err = (&controllers.StackReconciler{

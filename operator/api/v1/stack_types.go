@@ -7,20 +7,20 @@ import (
 
 // StackSpec defines the desired state of Stack
 type StackSpec struct {
-	BackendRef    *StackBackendRef    `json:"backendRef"`
+	BackendConfig BackendConfigSpec   `json:"backendConfig"`
 	CredentialRef *StackCredentialRef `json:"credentialRef,omitempty"`
 	Modules       []StackModuleRef    `json:"modules"`
 }
 
+// BackendConfigSpec defines the desired state of BackendConfig (inlined for Stack)
+type BackendConfigSpec struct {
+	Type     string               `json:"type"`
+	Settings apiextensionsv1.JSON `json:"settings"`
+}
 type StackModuleRef struct {
 	Name      string               `json:"name"`
 	Variables apiextensionsv1.JSON `json:"variables,omitempty"`
 	DependsOn []string             `json:"dependsOn,omitempty"`
-}
-
-// StackBackendRef matches backendRef in stack.yaml
-type StackBackendRef struct {
-	Name string `json:"name"`
 }
 
 // StackCredentialRef matches CredentialRef in stack.yaml
