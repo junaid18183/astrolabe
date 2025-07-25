@@ -127,18 +127,18 @@ func (r *StackReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 
 	writeFile(filepath.Join(workDir, "main.tf"), renderMainTf(stack, modules))
 
-	for i, mod := range modules {
-		stackMod := stack.Spec.Modules[i]
-		varTf := renderVariablesTf(mod, stackMod)
-		fname := mod.Name + ".variables.tf"
-		if fname == ".variables.tf" && mod.Name != "" {
-			fname = mod.Name + ".variables.tf"
-		}
-		if fname == ".variables.tf" {
-			fname = stackMod.Name + ".variables.tf"
-		}
-		writeFile(filepath.Join(workDir, fname), varTf)
-	}
+	// for i, mod := range modules {
+	// 	stackMod := stack.Spec.Modules[i]
+	// 	varTf := renderVariablesTf(mod, stackMod)
+	// 	fname := mod.Name + ".variables.tf"
+	// 	if fname == ".variables.tf" && mod.Name != "" {
+	// 		fname = mod.Name + ".variables.tf"
+	// 	}
+	// 	if fname == ".variables.tf" {
+	// 		fname = stackMod.Name + ".variables.tf"
+	// 	}
+	// 	writeFile(filepath.Join(workDir, fname), varTf)
+	// }
 
 	envVars := []string{}
 	if credentialRef != "" {
@@ -419,10 +419,25 @@ func renderMainTf(stack astrolabev1.Stack, modules []astrolabev1.Module) string 
 		stackMod := stack.Spec.Modules[i]
 		sb.WriteString(fmt.Sprintf("module \"%s\" {\n", stackMod.Name))
 		// Render source and version from mod.Spec.Source
-		sb.WriteString(fmt.Sprintf("  source = \"%s\"\n", mod.Spec.Source.URL))
-		if mod.Spec.Source.Version != "" {
-			sb.WriteString(fmt.Sprintf("  version = \"%s\"\n", mod.Spec.Source.Version))
+		// Compose the correct source string based on type
+		var sourceStr string
+		switch mod.Spec.Source.Type {
+		case "git":
+			if mod.Spec.Source.Version != "" {
+				sourceStr = fmt.Sprintf("git::%s?ref=%s", mod.Spec.Source.URL, mod.Spec.Source.Version)
+			} else {
+				sourceStr = fmt.Sprintf("git::%s", mod.Spec.Source.URL)
+			}
+		case "http":
+			sourceStr = mod.Spec.Source.URL
+		default:
+			sourceStr = mod.Spec.Source.URL
 		}
+		sb.WriteString(fmt.Sprintf("  source = \"%s\"\n", sourceStr))
+		// version is only needed if module is coming from terraform registry. We added version so that we can download it.
+		// if mod.Spec.Source.Version != "" {
+		// 	sb.WriteString(fmt.Sprintf("  version = \"%s\"\n", mod.Spec.Source.Version))
+		// }
 		// Unmarshal variables JSON
 		var variables map[string]interface{}
 		if stackMod.Variables.Raw != nil {
