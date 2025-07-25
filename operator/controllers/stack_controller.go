@@ -48,19 +48,8 @@ func (r *StackReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 		return ctrl.Result{}, err
 	}
 
-	// Set Reconciling phase at the start
-	r.updateStatusWithRetry(ctx, &stack, func(s *astrolabev1.Stack) {
-		s.Status.Phase = "Reconciling"
-		s.Status.Status = "InProgress"
-		s.Status.Summary = "Reconciling stack"
-		s.Status.Events = append(s.Status.Events, astrolabev1.StackEvent{
-			Type:      "Normal",
-			Reason:    "Reconciling",
-			Message:   "Reconciling stack",
-			Timestamp: time.Now().UTC().Format("2006-01-02T15:04:05Z07:00"),
-		})
-	})
-	r.emitStackEvent(&stack, corev1.EventTypeNormal, "Reconciling", "Reconciling stack")
+	// Set Reconciling phase at the start (event emission handled in setStackPhase)
+	r.setStackPhase(ctx, &stack, "Reconciling")
 
 	// If the Stack is being deleted, skip all processing and status updates
 	if stack.ObjectMeta.DeletionTimestamp != nil {
@@ -187,13 +176,20 @@ func (r *StackReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 	}
 	r.setStackPhase(ctx, &stack, "Applied")
 
-	r.emitStackEvent(&stack, corev1.EventTypeNormal, "StackApplied", "Stack successfully applied and outputs/resources updated.")
-
 	ctrl.Log.Info("Stack reconciliation complete", "name", stack.Name)
 	return ctrl.Result{}, nil
 }
 
+// emitStackEvent emits a Kubernetes event only if the last event is different (type, reason, message).
 func (r *StackReconciler) emitStackEvent(stack *astrolabev1.Stack, eventtype, reason, message string) {
+	// Deduplicate: only emit if last event is different
+	if len(stack.Status.Events) > 0 {
+		last := stack.Status.Events[len(stack.Status.Events)-1]
+		if last.Type == eventtype && last.Reason == reason && last.Message == message {
+			// Don't emit duplicate event
+			return
+		}
+	}
 	if r.Recorder != nil {
 		r.Recorder.Event(stack, eventtype, reason, message)
 	} else {
@@ -272,6 +268,8 @@ func (r *StackReconciler) handleDelete(ctx context.Context, stack *astrolabev1.S
 
 func (r *StackReconciler) setStackError(ctx context.Context, stack *astrolabev1.Stack, reason, msg string) {
 	for i := 0; i < 3; i++ {
+		prevReason := stack.Status.Status
+		prevMsg := stack.Status.Summary
 		stack.Status.Phase = "Error"
 		stack.Status.Status = reason
 		stack.Status.Summary = msg
@@ -283,6 +281,10 @@ func (r *StackReconciler) setStackError(ctx context.Context, stack *astrolabev1.
 		})
 		err := r.Status().Update(ctx, stack)
 		if err == nil {
+			// Only emit event if error reason or message changed
+			if prevReason != reason || prevMsg != msg {
+				r.emitStackEvent(stack, corev1.EventTypeWarning, reason, msg)
+			}
 			return
 		}
 		if k8serrors.IsConflict(err) {
@@ -300,9 +302,34 @@ func (r *StackReconciler) setStackError(ctx context.Context, stack *astrolabev1.
 
 func (r *StackReconciler) setStackPhase(ctx context.Context, stack *astrolabev1.Stack, phase string) {
 	for i := 0; i < 3; i++ {
+		prevPhase := stack.Status.Phase
 		stack.Status.Phase = phase
 		err := r.Status().Update(ctx, stack)
 		if err == nil {
+			// Only emit event if phase actually changed
+			if prevPhase != phase {
+				var reason, msg string
+				switch phase {
+				case "Reconciling":
+					reason = "Reconciling"
+					msg = "Reconciling stack"
+					r.emitStackEvent(stack, corev1.EventTypeNormal, reason, msg)
+				case "Applied":
+					reason = "StackApplied"
+					msg = "Stack successfully applied and outputs/resources updated."
+					r.emitStackEvent(stack, corev1.EventTypeNormal, reason, msg)
+				case "Ready":
+					reason = "StackReady"
+					msg = "Stack is ready."
+					r.emitStackEvent(stack, corev1.EventTypeNormal, reason, msg)
+				case "Error":
+					// Error events handled in setStackError
+				default:
+					reason = phase
+					msg = "Stack phase changed to " + phase
+					r.emitStackEvent(stack, corev1.EventTypeNormal, reason, msg)
+				}
+			}
 			return
 		}
 		if k8serrors.IsConflict(err) {
