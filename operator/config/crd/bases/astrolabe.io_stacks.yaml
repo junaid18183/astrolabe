@@ -92,7 +92,6 @@ spec:
                 type: array
             required:
             - backendRef
-            - credentialRef
             - modules
             type: object
           status:

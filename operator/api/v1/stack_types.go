@@ -8,7 +8,7 @@ import (
 // StackSpec defines the desired state of Stack
 type StackSpec struct {
 	BackendRef    *StackBackendRef    `json:"backendRef"`
-	CredentialRef *StackCredentialRef `json:"credentialRef"`
+	CredentialRef *StackCredentialRef `json:"credentialRef,omitempty"`
 	Modules       []StackModuleRef    `json:"modules"`
 }
 
