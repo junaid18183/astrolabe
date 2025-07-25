@@ -130,21 +130,8 @@ func (r *StackReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 	workDir := filepath.Join("/tmp", "astrolabe", stack.Namespace, stack.Name)
 	os.MkdirAll(workDir, 0700)
 	writeFile(filepath.Join(workDir, "backend.tf"), renderBackendTf(backend, stack.Name))
-
 	writeFile(filepath.Join(workDir, "main.tf"), renderMainTf(stack, modules))
-
-	// for i, mod := range modules {
-	// 	stackMod := stack.Spec.Modules[i]
-	// 	varTf := renderVariablesTf(mod, stackMod)
-	// 	fname := mod.Name + ".variables.tf"
-	// 	if fname == ".variables.tf" && mod.Name != "" {
-	// 		fname = mod.Name + ".variables.tf"
-	// 	}
-	// 	if fname == ".variables.tf" {
-	// 		fname = stackMod.Name + ".variables.tf"
-	// 	}
-	// 	writeFile(filepath.Join(workDir, fname), varTf)
-	// }
+	writeFile(filepath.Join(workDir, "outputs.tf"), renderOutputsTf(modules))
 
 	envVars := []string{}
 	if credentialRef != "" {
@@ -402,6 +389,21 @@ func runTerraformStep(workDir, step string, env []string) (string, error) {
 		return output, fmt.Errorf("terraform %s failed: %w\nOutput: %s", step, err, output)
 	}
 	return output, nil
+}
+
+// renderOutputsTf generates the outputs.tf content for all modules, using their output names.
+func renderOutputsTf(modules []astrolabev1.Module) string {
+	var sb strings.Builder
+	for _, mod := range modules {
+		modName := mod.Name
+		// If module outputs are defined in Status.Outputs, use them; else, skip
+		if mod.Status.Outputs != nil {
+			for _, output := range mod.Status.Outputs {
+				sb.WriteString(fmt.Sprintf("output \"%s\" {\n  value = module.%s.%s\n}\n\n", output.Name, modName, output.Name))
+			}
+		}
+	}
+	return sb.String()
 }
 
 func renderBackendTf(backend astrolabev1.BackendConfig, stackName string) string {
