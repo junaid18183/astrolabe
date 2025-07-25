@@ -42,6 +42,8 @@ type StackStatus struct {
 	Outputs   apiextensionsv1.JSON `json:"outputs,omitempty"`
 	Resources []StackResource      `json:"resources,omitempty"`
 	Ready     bool                 `json:"ready,omitempty"`
+	// Conditions represent the latest available observations of an object's state
+	Conditions []metav1.Condition `json:"conditions,omitempty" patchStrategy:"merge" patchMergeKey:"type"`
 }
 
 type StackResource struct {
