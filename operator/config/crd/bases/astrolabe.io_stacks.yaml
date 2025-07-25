@@ -110,19 +110,10 @@ spec:
               resources:
                 items:
                   properties:
-                    id:
-                      type: string
                     name:
                       type: string
-                    status:
-                      type: string
-                    type:
-                      type: string
                   required:
-                  - id
                   - name
-                  - status
-                  - type
                   type: object
                 type: array
               status:

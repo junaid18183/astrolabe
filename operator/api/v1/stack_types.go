@@ -45,10 +45,7 @@ type StackStatus struct {
 }
 
 type StackResource struct {
-	ID     string `json:"id"`
-	Type   string `json:"type"`
-	Name   string `json:"name"`
-	Status string `json:"status"`
+	Name string `json:"name"`
 }
 
 type StackPlanChange struct {

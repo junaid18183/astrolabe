@@ -164,6 +164,8 @@ func (r *StackReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 	}
 	outputsJSON, _ := json.Marshal(outputs)
 	stack.Status.Outputs = apiextensionsv1.JSON{Raw: outputsJSON}
+
+	// Only set Name for each resource in status, not Id/Status/Type
 	stack.Status.Resources = make([]astrolabev1.StackResource, len(resources))
 	for i, rname := range resources {
 		stack.Status.Resources[i] = astrolabev1.StackResource{Name: rname}
@@ -292,34 +294,29 @@ func (r *StackReconciler) setStackError(ctx context.Context, stack *astrolabev1.
 
 func (r *StackReconciler) setStackPhase(ctx context.Context, stack *astrolabev1.Stack, phase string) {
 	for i := 0; i < 3; i++ {
-		prevPhase := stack.Status.Phase
 		stack.Status.Phase = phase
 		err := r.Status().Update(ctx, stack)
 		if err == nil {
-			// Only emit event if phase actually changed
-			if prevPhase != phase {
-				var reason, msg string
-				switch phase {
-				case "Reconciling":
-					reason = "Reconciling"
-					msg = "Reconciling stack"
-					r.emitStackEvent(stack, corev1.EventTypeNormal, reason, msg)
-				case "Applied":
-					reason = "StackApplied"
-					msg = "Stack successfully applied and outputs/resources updated."
-					r.emitStackEvent(stack, corev1.EventTypeNormal, reason, msg)
-				case "Ready":
-					reason = "StackReady"
-					msg = "Stack is ready."
-					r.emitStackEvent(stack, corev1.EventTypeNormal, reason, msg)
-				case "Error":
-					// Error events handled in setStackError
-				default:
-					reason = phase
-					msg = "Stack phase changed to " + phase
-					r.emitStackEvent(stack, corev1.EventTypeNormal, reason, msg)
-				}
+			// Always emit event on phase change (even if same phase, for visibility)
+			var reason, msg string
+			switch phase {
+			case "Reconciling":
+				reason = "Reconciling"
+				msg = "Reconciling stack"
+			case "Applied":
+				reason = "StackApplied"
+				msg = "Stack successfully applied and outputs/resources updated."
+			case "Ready":
+				reason = "StackReady"
+				msg = "Stack is ready."
+			case "Error":
+				// Error events handled in setStackError
+				return
+			default:
+				reason = phase
+				msg = "Stack phase changed to " + phase
 			}
+			r.emitStackEvent(stack, corev1.EventTypeNormal, reason, msg)
 			return
 		}
 		if k8serrors.IsConflict(err) {
