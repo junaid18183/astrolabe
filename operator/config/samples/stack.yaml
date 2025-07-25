@@ -20,7 +20,7 @@ spec:
   credentialRef:
     name: aws-creds-dev
   modules:
-    - name: aws-vpc
+    - name: aws-vpc-git
       variables:
         name: "demo-vpc"
         cidr: "10.0.0.0/16"

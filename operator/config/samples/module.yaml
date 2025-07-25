@@ -1,7 +1,7 @@
 apiVersion: astrolabe.io/v1
 kind: Module
 metadata:
-  name: aws-vpc
+  name: aws-vpc-git
 spec:
   source:
     type: git
@@ -11,7 +11,17 @@ spec:
 # apiVersion: astrolabe.io/v1
 # kind: Module
 # metadata:
-#   name: eks
+#   name: aws-vpc-git-ssh
+# spec:
+#   source:
+#     type: git
+#     url: "git@github.com:terraform-aws-modules/terraform-aws-vpc.git"
+#     version: "v5.5.0"
+# ---
+# apiVersion: astrolabe.io/v1
+# kind: Module
+# metadata:
+#   name: eks-git
 # spec:
 #   source:
 #     type: git
@@ -21,7 +31,7 @@ spec:
 # apiVersion: astrolabe.io/v1
 # kind: Module
 # metadata:
-#   name: eks
+#   name: eks-http
 # spec:
 #   source:
 #     type: http
