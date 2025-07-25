@@ -98,23 +98,6 @@ spec:
           status:
             description: StackStatus defines the observed state of Stack
             properties:
-              events:
-                items:
-                  properties:
-                    message:
-                      type: string
-                    reason:
-                      type: string
-                    timestamp:
-                      type: string
-                    type:
-                      type: string
-                  required:
-                  - type
-                  type: object
-                type: array
-              logs:
-                type: string
               outputs:
                 x-kubernetes-preserve-unknown-fields: true
               phase:

@@ -39,10 +39,8 @@ type StackStatus struct {
 	Phase     string               `json:"phase,omitempty"`
 	Status    string               `json:"status,omitempty"`
 	Summary   string               `json:"summary,omitempty"`
-	Logs      string               `json:"logs,omitempty"`
 	Outputs   apiextensionsv1.JSON `json:"outputs,omitempty"`
 	Resources []StackResource      `json:"resources,omitempty"`
-	Events    []StackEvent         `json:"events,omitempty"`
 }
 
 type StackResource struct {
@@ -61,13 +59,6 @@ type StackApply struct {
 	Status  string `json:"status,omitempty"`
 	Summary string `json:"summary,omitempty"`
 	Logs    string `json:"logs,omitempty"`
-}
-
-type StackEvent struct {
-	Type      string `json:"type"`
-	Reason    string `json:"reason,omitempty"`
-	Message   string `json:"message,omitempty"`
-	Timestamp string `json:"timestamp,omitempty"`
 }
 
 // +kubebuilder:object:root=true

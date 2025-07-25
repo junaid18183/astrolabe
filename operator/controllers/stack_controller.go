@@ -182,14 +182,7 @@ func (r *StackReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 
 // emitStackEvent emits a Kubernetes event only if the last event is different (type, reason, message).
 func (r *StackReconciler) emitStackEvent(stack *astrolabev1.Stack, eventtype, reason, message string) {
-	// Deduplicate: only emit if last event is different
-	if len(stack.Status.Events) > 0 {
-		last := stack.Status.Events[len(stack.Status.Events)-1]
-		if last.Type == eventtype && last.Reason == reason && last.Message == message {
-			// Don't emit duplicate event
-			return
-		}
-	}
+	// Emit a Kubernetes event. Deduplication is handled by the event system.
 	if r.Recorder != nil {
 		r.Recorder.Event(stack, eventtype, reason, message)
 	} else {
@@ -273,12 +266,7 @@ func (r *StackReconciler) setStackError(ctx context.Context, stack *astrolabev1.
 		stack.Status.Phase = "Error"
 		stack.Status.Status = reason
 		stack.Status.Summary = msg
-		stack.Status.Events = append(stack.Status.Events, astrolabev1.StackEvent{
-			Type:      "Error",
-			Reason:    reason,
-			Message:   msg,
-			Timestamp: time.Now().UTC().Format("2006-01-02T15:04:05Z07:00"),
-		})
+		// No longer append to stack.Status.Events; rely on Kubernetes events only
 		err := r.Status().Update(ctx, stack)
 		if err == nil {
 			// Only emit event if error reason or message changed
@@ -344,27 +332,9 @@ func (r *StackReconciler) setStackPhase(ctx context.Context, stack *astrolabev1.
 	}
 }
 
+// appendStackLog is now a no-op. Logs are not stored in status; see controller logs for details.
 func (r *StackReconciler) appendStackLog(ctx context.Context, stack *astrolabev1.Stack, step, logStr string) {
-	for i := 0; i < 3; i++ {
-		if stack.Status.Logs == "" {
-			stack.Status.Logs = step + ":\n" + logStr + "\n"
-		} else {
-			stack.Status.Logs += step + ":\n" + logStr + "\n"
-		}
-		err := r.Status().Update(ctx, stack)
-		if err == nil {
-			return
-		}
-		if k8serrors.IsConflict(err) {
-			var latest astrolabev1.Stack
-			if getErr := r.Get(ctx, client.ObjectKeyFromObject(stack), &latest); getErr == nil {
-				stack = &latest
-				continue
-			}
-		}
-		ctrl.Log.Info("Failed to update stack status in appendStackLog", "error", err)
-		return
-	}
+	// No-op: do not store logs in status. Use controller logs for details.
 }
 
 // setStackSuccess sets status fields and appends a success event
@@ -373,12 +343,7 @@ func (r *StackReconciler) setStackSuccess(ctx context.Context, stack *astrolabev
 		stack.Status.Phase = "Ready"
 		stack.Status.Status = "Success"
 		stack.Status.Summary = msg
-		stack.Status.Events = append(stack.Status.Events, astrolabev1.StackEvent{
-			Type:      "Normal",
-			Reason:    "StackReady",
-			Message:   msg,
-			Timestamp: time.Now().UTC().Format("2006-01-02T15:04:05Z07:00"),
-		})
+		// No longer append to stack.Status.Events; rely on Kubernetes events only
 		err := r.Status().Update(ctx, stack)
 		if err == nil {
 			return
