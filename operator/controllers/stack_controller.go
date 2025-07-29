@@ -39,6 +39,7 @@ type StackReconciler struct {
 
 func (r *StackReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	ctrl.Log.Info("Reconciling Stack", "name", req.NamespacedName)
+	// Debug: log deletion timestamp and finalizers
 	var stack astrolabev1.Stack
 	if err := r.Get(ctx, req.NamespacedName, &stack); err != nil {
 		ctrl.Log.Info("Failed to get Stack resource", "error", err)
@@ -48,20 +49,32 @@ func (r *StackReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 		return ctrl.Result{}, err
 	}
 
+	ctrl.Log.Info("Stack resource loaded", "name", stack.Name, "deletionTimestamp", stack.ObjectMeta.DeletionTimestamp, "finalizers", stack.ObjectMeta.Finalizers)
+
+	// If the Stack is being deleted, handle deletion logic FIRST
+	if stack.ObjectMeta.DeletionTimestamp != nil {
+		ctrl.Log.Info("Stack is being deleted", "name", stack.Name)
+		return r.handleDelete(ctx, &stack)
+	}
+
 	// Early return if Stack is already in terminal state
 	if stack.Status.Phase == "Ready" || stack.Status.Status == "Success" {
 		ctrl.Log.Info("Stack is already in terminal state, skipping reconciliation", "name", stack.Name, "phase", stack.Status.Phase, "status", stack.Status.Status)
 		return ctrl.Result{}, nil
 	}
 
+	// Add finalizer if not present
+	finalizerName := "stack.finalizers.astrolabe.io"
+	if !controllerutil.ContainsFinalizer(&stack, finalizerName) {
+		controllerutil.AddFinalizer(&stack, finalizerName)
+		if err := r.Update(ctx, &stack); err != nil {
+			return ctrl.Result{}, err
+		}
+		r.emitStackEvent(&stack, corev1.EventTypeNormal, "FinalizerAdded", "Finalizer added to Stack")
+	}
+
 	// Set Reconciling phase at the start (event emission handled in setStackPhase)
 	r.setStackPhase(ctx, &stack, "Reconciling")
-
-	// If the Stack is being deleted, skip all processing and status updates
-	if stack.ObjectMeta.DeletionTimestamp != nil {
-		ctrl.Log.Info("Stack is being deleted", "name", stack.Name)
-		return r.handleDelete(ctx, &stack)
-	}
 
 	credentialRef := ""
 	if stack.Spec.CredentialRef != nil {
@@ -248,10 +261,41 @@ func parseTerraformState(workDir string) (map[string]interface{}, []string, erro
 }
 
 func (r *StackReconciler) handleDelete(ctx context.Context, stack *astrolabev1.Stack) (ctrl.Result, error) {
-	controllerutil.RemoveFinalizer(stack, "stack.finalizers.astrolabe.io")
+	finalizerName := "stack.finalizers.astrolabe.io"
+	workDir := filepath.Join("/tmp", "astrolabe", stack.Namespace, stack.Name)
+	ctrl.Log.Info("handleDelete called", "name", stack.Name, "deletionTimestamp", stack.ObjectMeta.DeletionTimestamp, "finalizers", stack.ObjectMeta.Finalizers)
+	r.setStackPhase(ctx, stack, "Destroying")
+	r.emitStackEvent(stack, corev1.EventTypeNormal, "DestroyStarted", "Starting terraform destroy")
+	// Attempt terraform destroy
+	envVars := []string{}
+	if stack.Spec.CredentialRef != nil {
+		var credSecret corev1.Secret
+		if err := r.Get(ctx, client.ObjectKey{Namespace: stack.Namespace, Name: stack.Spec.CredentialRef.Name}, &credSecret); err == nil {
+			for k, v := range credSecret.Data {
+				envVars = append(envVars, fmt.Sprintf("%s=%s", k, string(v)))
+			}
+		}
+	}
+	ctrl.Log.Info("Running terraform destroy", "workDir", workDir, "envVars", envVars)
+	out, err := runTerraformStep(workDir, "destroy", envVars)
+	ctrl.Log.Info("Terraform destroy output", "output", out, "error", err)
+	r.appendStackLog(ctx, stack, "destroy", out)
+	if err != nil {
+		ctrl.Log.Info("Terraform destroy failed, not removing finalizer", "error", err)
+		r.setStackError(ctx, stack, "TerraformDestroyError", err.Error())
+		r.emitStackEvent(stack, corev1.EventTypeWarning, "DestroyFailed", err.Error())
+		// Do not remove finalizer, so deletion is retried
+		return ctrl.Result{RequeueAfter: time.Minute * 1}, nil
+	}
+	// Success: remove finalizer
+	ctrl.Log.Info("Terraform destroy succeeded, removing finalizer", "name", stack.Name)
+	controllerutil.RemoveFinalizer(stack, finalizerName)
 	if err := r.Update(ctx, stack); err != nil {
+		ctrl.Log.Info("Failed to update stack after removing finalizer", "error", err)
 		return ctrl.Result{}, err
 	}
+	r.setStackPhase(ctx, stack, "Destroyed")
+	r.emitStackEvent(stack, corev1.EventTypeNormal, "DestroySucceeded", "Terraform destroy completed, finalizer removed")
 	return ctrl.Result{}, nil
 }
 
@@ -360,6 +404,8 @@ func runTerraformStep(workDir, step string, env []string) (string, error) {
 		cmd = exec.Command("terraform", "plan", "-input=false", "-no-color")
 	} else if step == "apply" {
 		cmd = exec.Command("terraform", "apply", "-auto-approve", "-input=false", "-no-color")
+	} else if step == "destroy" {
+		cmd = exec.Command("terraform", "destroy", "-auto-approve", "-input=false", "-no-color")
 	} else {
 		return "", fmt.Errorf("unsupported terraform step: %s", step)
 	}
