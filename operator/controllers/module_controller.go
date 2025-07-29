@@ -26,7 +26,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 // ModuleReconciler reconciles a Module object
@@ -40,11 +39,9 @@ type ModuleReconciler struct {
 //+kubebuilder:rbac:groups=astrolabe.io,resources=modules/status,verbs=get;update;patch
 
 func (r *ModuleReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	logger := log.FromContext(ctx)
-
 	var module astrolabev1.Module
 	if err := r.Get(ctx, req.NamespacedName, &module); err != nil {
-		logger.Info("Failed to get Module resource", "error", err)
+		ctrl.Log.Info("Failed to get Module resource", "error", err)
 		if k8serrors.IsNotFound(err) {
 			return ctrl.Result{}, nil
 		}
@@ -52,11 +49,11 @@ func (r *ModuleReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		return ctrl.Result{}, err
 	}
 
-	logger.Info("Module resource loaded", "name", module.Name, "deletionTimestamp", module.ObjectMeta.DeletionTimestamp)
+	ctrl.Log.Info("Module resource loaded", "name", module.Name, "deletionTimestamp", module.ObjectMeta.DeletionTimestamp)
 
 	// If the Module is being deleted, handle deletion logic FIRST
 	if module.ObjectMeta.DeletionTimestamp != nil {
-		logger.Info("Module is being deleted, skipping status update and processing", "name", module.Name, "namespace", module.Namespace)
+		ctrl.Log.Info("Module is being deleted, skipping status update and processing", "name", module.Name, "namespace", module.Namespace)
 		r.emitModuleEvent(&module, "Normal", "Deleting", "Module is being deleted, skipping status update and processing")
 		return ctrl.Result{}, nil
 	}
@@ -73,13 +70,14 @@ func (r *ModuleReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		}
 	}
 	if isTerminal {
-		logger.Info("Module is already in terminal state, skipping reconciliation", "name", module.Name)
+		ctrl.Log.Info("Module is already in terminal state, skipping reconciliation", "name", module.Name)
 		r.emitModuleEvent(&module, "Normal", "TerminalState", "Module is already in terminal state, skipping reconciliation")
 		return ctrl.Result{}, nil
 	}
 
 	// Emit event: reconciliation started
 	r.emitModuleEvent(&module, "Normal", "Reconciling", "Reconciling Module resource")
+	ctrl.Log.Info("Reconciling Module resource", "name", module.Name)
 
 	// Compute hash of type, url, version
 	source := module.Spec.Source
@@ -90,7 +88,7 @@ func (r *ModuleReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	if module.Status.Conditions != nil {
 		for _, cond := range module.Status.Conditions {
 			if cond.Type == "SourceHash" && cond.Status == hash {
-				logger.Info("No change in type, url, or version; skipping reconciliation", "hash", hash)
+				ctrl.Log.Info("No change in type, url, or version; skipping reconciliation", "hash", hash)
 				return ctrl.Result{}, nil
 			}
 		}
@@ -150,14 +148,14 @@ func (r *ModuleReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	var moduleDir string = workDir
 	switch module.Spec.Source.Type {
 	case "git":
-		logger.Info("Cloning git repository", "url", module.Spec.Source.URL, "version", module.Spec.Source.Version)
+		ctrl.Log.Info("Cloning git repository", "url", module.Spec.Source.URL, "version", module.Spec.Source.Version)
 		cmd := exec.Command("git", "clone", module.Spec.Source.URL, workDir)
 		if module.Spec.Source.Version != "" {
 			cmd = exec.Command("git", "clone", "--branch", module.Spec.Source.Version, module.Spec.Source.URL, workDir)
 		}
 		fetchErr = cmd.Run()
 	case "http":
-		logger.Info("Downloading and extracting HTTP archive", "url", module.Spec.Source.URL)
+		ctrl.Log.Info("Downloading and extracting HTTP archive", "url", module.Spec.Source.URL)
 		resp, err := http.Get(module.Spec.Source.URL)
 		if err != nil {
 			fetchErr = err
@@ -229,9 +227,9 @@ func (r *ModuleReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 				}
 				if len(subdirs) == 1 {
 					moduleDir = filepath.Join(workDir, subdirs[0])
-					logger.Info("Detected single subdirectory after extraction", "moduleDir", moduleDir)
+					ctrl.Log.Info("Detected single subdirectory after extraction", "moduleDir", moduleDir)
 				} else {
-					logger.Info("No single subdirectory detected after extraction", "dirs", subdirs)
+					ctrl.Log.Info("No single subdirectory detected after extraction", "dirs", subdirs)
 				}
 			}
 		} else if ext == ".gz" || ext == ".tgz" {
@@ -262,16 +260,16 @@ func (r *ModuleReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 			fetchErr = fmt.Errorf("unsupported archive type: %s", ext)
 		}
 	case "local":
-		logger.Info("Local source type not implemented yet")
+		ctrl.Log.Info("Local source type not implemented yet")
 		fetchErr = nil
 	default:
-		logger.Info("Unknown source type", "type", module.Spec.Source.Type)
+		ctrl.Log.Info("Unknown source type", "type", module.Spec.Source.Type)
 		fetchErr = nil
 	}
 
 	if fetchErr != nil {
 		setCondition("Ready", "False", "CloneFailed", "Failed to fetch module source")
-		logger.Error(fetchErr, "Failed to fetch module source")
+		ctrl.Log.Error(fetchErr, "Failed to fetch module source")
 		if module.ObjectMeta.DeletionTimestamp == nil {
 			_ = r.Status().Update(ctx, &module)
 		}
@@ -281,12 +279,12 @@ func (r *ModuleReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	// Store the new hash in status
 	setCondition("SourceHash", hash, "", "")
 
-	logger.Info("Running terraform-docs", "dir", moduleDir)
+	ctrl.Log.Info("Running terraform-docs", "dir", moduleDir)
 	docsCmd := exec.Command("terraform-docs", "json", moduleDir)
 	docsOut, err := docsCmd.Output()
 	if err != nil {
 		setCondition("Ready", "False", "ParseFailed", "Failed to run terraform-docs")
-		logger.Error(err, "Failed to run terraform-docs", "dir", moduleDir)
+		ctrl.Log.Error(err, "Failed to run terraform-docs", "dir", moduleDir)
 		if module.ObjectMeta.DeletionTimestamp == nil {
 			_ = r.Status().Update(ctx, &module)
 		}
@@ -329,7 +327,7 @@ func (r *ModuleReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 
 	var docs tfDocs
 	if err := json.Unmarshal(docsOut, &docs); err != nil {
-		logger.Error(err, "Failed to parse terraform-docs output")
+		ctrl.Log.Error(err, "Failed to parse terraform-docs output")
 		return ctrl.Result{RequeueAfter: 1 * time.Minute}, nil
 	}
 
@@ -413,10 +411,10 @@ func (r *ModuleReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		if err := r.Status().Update(ctx, &module); err != nil {
 			// Ignore not found and precondition failed errors during deletion
 			if k8serrors.IsNotFound(err) || isPreconditionFailed(err) || (err != nil && strings.Contains(err.Error(), "Precondition failed")) {
-				logger.Info("Ignoring status update error during deletion", "error", err)
+				ctrl.Log.Info("Ignoring status update error during deletion", "error", err)
 				return ctrl.Result{}, nil
 			}
-			logger.Error(err, "Failed to update Module status")
+			ctrl.Log.Error(err, "Failed to update Module status")
 			return ctrl.Result{}, err
 		}
 	}
