@@ -67,15 +67,25 @@ func (r *StackReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 	// Add finalizer if not present
 	finalizerName := "stack.finalizers.astrolabe.io"
 	if !controllerutil.ContainsFinalizer(&stack, finalizerName) {
+		// Idempotency: Only update if finalizer is not present
 		controllerutil.AddFinalizer(&stack, finalizerName)
-		if err := r.Update(ctx, &stack); err != nil {
-			return ctrl.Result{}, err
+		// Deep equality check before update
+		var latestStack astrolabev1.Stack
+		if err := r.Get(ctx, req.NamespacedName, &latestStack); err == nil {
+			if !controllerutil.ContainsFinalizer(&latestStack, finalizerName) {
+				if err := r.Update(ctx, &stack); err != nil {
+					return ctrl.Result{}, err
+				}
+				r.emitStackEvent(&stack, corev1.EventTypeNormal, "FinalizerAdded", "Finalizer added to Stack")
+			}
 		}
-		r.emitStackEvent(&stack, corev1.EventTypeNormal, "FinalizerAdded", "Finalizer added to Stack")
 	}
 
 	// Set Reconciling phase at the start (event emission handled in setStackPhase)
-	r.setStackPhase(ctx, &stack, "Reconciling")
+	// Idempotency: Only set phase if not already Reconciling
+	if stack.Status.Phase != "Reconciling" {
+		r.setStackPhase(ctx, &stack, "Reconciling")
+	}
 
 	credentialRef := ""
 	if stack.Spec.CredentialRef != nil {
@@ -178,13 +188,41 @@ func (r *StackReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 	}
 
 	// Set phase to 'Applied' and mark Ready true
-	r.setStackPhase(ctx, &stack, "Applied")
-	stack.Status.Phase = "Applied"
-	stack.Status.Status = "Success"
-	stack.Status.Summary = "Stack successfully applied and outputs/resources updated."
-	stack.Status.Ready = true
-	// Update status in API
-	_ = r.Status().Update(ctx, &stack)
+	outputsJSON, _ = json.Marshal(outputs)
+	// Idempotency: Only update outputs if changed
+	if !bytes.Equal(stack.Status.Outputs.Raw, outputsJSON) {
+		stack.Status.Outputs = apiextensionsv1.JSON{Raw: outputsJSON}
+	}
+
+	// Only set Name for each resource in status, not Id/Status/Type
+	resourcesChanged := false
+	if len(stack.Status.Resources) != len(resources) {
+		resourcesChanged = true
+	} else {
+		for i, rname := range resources {
+			if stack.Status.Resources[i].Name != rname {
+				resourcesChanged = true
+				break
+			}
+		}
+	}
+	if resourcesChanged {
+		stack.Status.Resources = make([]astrolabev1.StackResource, len(resources))
+		for i, rname := range resources {
+			stack.Status.Resources[i] = astrolabev1.StackResource{Name: rname}
+		}
+	}
+
+	// Set phase to 'Applied' and mark Ready true only if not already
+	if stack.Status.Phase != "Applied" || stack.Status.Status != "Success" || !stack.Status.Ready || stack.Status.Summary != "Stack successfully applied and outputs/resources updated." {
+		r.setStackPhase(ctx, &stack, "Applied")
+		stack.Status.Phase = "Applied"
+		stack.Status.Status = "Success"
+		stack.Status.Summary = "Stack successfully applied and outputs/resources updated."
+		stack.Status.Ready = true
+		// Update status in API
+		_ = r.Status().Update(ctx, &stack)
+	}
 
 	ctrl.Log.Info("Stack reconciliation complete", "name", stack.Name)
 	return ctrl.Result{}, nil

@@ -1,5 +1,5 @@
 ---
-description: My Development Guid using AI and MCP agent.
+description: My Development Guide using AI and MCP agent.
 applyTo: "**/*"
 alwaysApply: true
 ---
