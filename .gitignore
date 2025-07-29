@@ -28,7 +28,6 @@ node_modules/
 .cursor/
 .env.example
 .gemini/
-.github/
 .juned/
 .kiro/
 .mcp.json
@@ -48,4 +47,4 @@ target/
 
 # Task files
 # tasks.json
-# tasks/ 
+# tasks/
