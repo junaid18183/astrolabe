@@ -18,6 +18,7 @@ import (
 	"time"
 
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/tools/record"
 
 	astrolabev1 "github.com/junaid18183/astrolabe/api/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
@@ -31,7 +32,8 @@ import (
 // ModuleReconciler reconciles a Module object
 type ModuleReconciler struct {
 	client.Client
-	Scheme *runtime.Scheme
+	Scheme   *runtime.Scheme
+	Recorder record.EventRecorder
 }
 
 //+kubebuilder:rbac:groups=astrolabe.io,resources=modules,verbs=get;list;watch;update;patch
@@ -42,17 +44,25 @@ func (r *ModuleReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 
 	var module astrolabev1.Module
 	if err := r.Get(ctx, req.NamespacedName, &module); err != nil {
+		logger.Info("Failed to get Module resource", "error", err)
 		if k8serrors.IsNotFound(err) {
 			return ctrl.Result{}, nil
 		}
+		r.emitModuleEvent(&module, "Warning", "GetFailed", "Failed to get Module resource")
 		return ctrl.Result{}, err
 	}
 
-	// If the Module is being deleted, skip all processing and status updates
+	logger.Info("Module resource loaded", "name", module.Name, "deletionTimestamp", module.ObjectMeta.DeletionTimestamp)
+
+	// If the Module is being deleted, handle deletion logic FIRST
 	if module.ObjectMeta.DeletionTimestamp != nil {
 		logger.Info("Module is being deleted, skipping status update and processing", "name", module.Name, "namespace", module.Namespace)
+		r.emitModuleEvent(&module, "Normal", "Deleting", "Module is being deleted, skipping status update and processing")
 		return ctrl.Result{}, nil
 	}
+
+	// Emit event: reconciliation started
+	r.emitModuleEvent(&module, "Normal", "Reconciling", "Reconciling Module resource")
 
 	// Compute hash of type, url, version
 	source := module.Spec.Source
@@ -406,7 +416,17 @@ func isPreconditionFailed(err error) bool {
 }
 
 func (r *ModuleReconciler) SetupWithManager(mgr ctrl.Manager) error {
+	r.Recorder = mgr.GetEventRecorderFor("module-controller")
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&astrolabev1.Module{}).
 		Complete(r)
+}
+
+// emitModuleEvent emits a Kubernetes event for Module
+func (r *ModuleReconciler) emitModuleEvent(module *astrolabev1.Module, eventtype, reason, message string) {
+	if r.Recorder != nil {
+		r.Recorder.Event(module, eventtype, reason, message)
+	} else {
+		ctrl.Log.WithName("event").WithValues("module", module.Name).Info("Event", "type", eventtype, "reason", reason, "message", message)
+	}
 }
