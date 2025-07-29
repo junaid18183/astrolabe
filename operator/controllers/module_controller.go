@@ -61,6 +61,23 @@ func (r *ModuleReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		return ctrl.Result{}, nil
 	}
 
+	// Check for terminal state and skip reconciliation if true
+	terminalStates := map[string]struct{}{
+		"Ready": {},
+	}
+	isTerminal := false
+	for _, cond := range module.Status.Conditions {
+		if _, ok := terminalStates[cond.Type]; ok && cond.Status == "True" {
+			isTerminal = true
+			break
+		}
+	}
+	if isTerminal {
+		logger.Info("Module is already in terminal state, skipping reconciliation", "name", module.Name)
+		r.emitModuleEvent(&module, "Normal", "TerminalState", "Module is already in terminal state, skipping reconciliation")
+		return ctrl.Result{}, nil
+	}
+
 	// Emit event: reconciliation started
 	r.emitModuleEvent(&module, "Normal", "Reconciling", "Reconciling Module resource")
 
