@@ -6,13 +6,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"k8s.io/client-go/tools/record"
 	"math"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
 	"time"
+
+	"k8s.io/client-go/tools/record"
 
 	astrolabev1 "github.com/junaid18183/astrolabe/api/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -565,6 +566,7 @@ func writeFile(path, content string) error {
 }
 
 func (r *StackReconciler) SetupWithManager(mgr ctrl.Manager) error {
+	r.Recorder = mgr.GetEventRecorderFor("stack-controller")
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&astrolabev1.Stack{}).
 		Owns(&corev1.Secret{}).
