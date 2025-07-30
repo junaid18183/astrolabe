@@ -81,12 +81,6 @@ func (r *StackReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 		}
 	}
 
-	// Set Reconciling phase at the start (event emission handled in setStackPhase)
-	// Idempotency: Only set phase if not already Reconciling
-	if stack.Status.Phase != "Reconciling" {
-		r.setStackPhase(ctx, &stack, "Reconciling")
-	}
-
 	credentialRef := ""
 	if stack.Spec.CredentialRef != nil {
 		credentialRef = stack.Spec.CredentialRef.Name
@@ -160,9 +154,7 @@ func (r *StackReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 	for _, step := range steps {
 		phase := strings.Title(step)
 		ctrl.Log.Info("Running terraform step", "step", step, "workDir", workDir)
-		if step != "apply" {
-			r.setStackPhase(ctx, &stack, phase)
-		}
+		r.setStackPhase(ctx, &stack, phase)
 		out, err := runTerraformStep(workDir, step, envVars)
 		r.appendStackLog(ctx, &stack, step, out)
 		if err != nil {
