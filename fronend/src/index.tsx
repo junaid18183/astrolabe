@@ -1,25 +1,72 @@
-/*
- * Copyright 2025 The Kubernetes Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+import { registerRoute, registerSidebarEntry } from '@kinvolk/headlamp-plugin/lib';
+import { ModuleDetailsView, ModuleListView1 } from './module';
+import { StackDetailsView, StackListView } from './stack';
 
-import { registerAppBarAction } from '@kinvolk/headlamp-plugin/lib';
+const ASTROLABE_ROOT_SIDEBAR = 'astrolabe';
+const ASTROLABE_MODULES_LIST_ROUTE = 'modules';
+const ASTROLABE_MODULE_DETAILS_ROUTE = 'module';
+const ASTROLABE_STACKS_LIST_ROUTE = 'stacks';
 
-// Below are some imports you may want to use.
-//   See README.md for links to plugin development documentation.
-// import { SectionBox } from '@kinvolk/headlamp-plugin/lib/CommonComponents';
-// import { K8s } from '@kinvolk/headlamp-plugin/lib/K8s';
-// import { Typography } from '@mui/material';
+// Register Root Sidebar Entries
+registerSidebarEntry({
+  parent: null, // Top-level entry
+  name: ASTROLABE_ROOT_SIDEBAR,
+  label: 'Astrolabe',
+  icon: 'mdi:cow', // Example icon, find appropriate one at https://icon-sets.iconify.design/mdi/
+});
 
-registerAppBarAction(<span>Hello</span>);
+// Register Modules Sidebar Entry
+registerSidebarEntry({
+  parent: ASTROLABE_ROOT_SIDEBAR,
+  name: ASTROLABE_MODULES_LIST_ROUTE,
+  label: 'Modules',
+  url: '/astrolabe/modules',
+});
+
+// Register Stacks Sidebar Entry
+registerSidebarEntry({
+  parent: ASTROLABE_ROOT_SIDEBAR,
+  name: ASTROLABE_STACKS_LIST_ROUTE,
+  label: 'Stacks',
+  url: '/astrolabe/stacks',
+});
+
+// Stacks List View
+registerRoute({
+  path: '/astrolabe/stacks',
+  sidebar: ASTROLABE_STACKS_LIST_ROUTE,
+  name: ASTROLABE_STACKS_LIST_ROUTE,
+  exact: true,
+  component: StackListView,
+});
+
+// Stack Detail View
+registerRoute({
+  path: '/astrolabe/stacks/:namespace/:name',
+  sidebar: ASTROLABE_STACKS_LIST_ROUTE,
+  parent: ASTROLABE_ROOT_SIDEBAR,
+  name: ASTROLABE_STACKS_LIST_ROUTE,
+  exact: true,
+  component: StackDetailsView,
+});
+
+// Module List View
+registerRoute({
+  path: '/astrolabe/modules',
+  sidebar: ASTROLABE_MODULES_LIST_ROUTE,
+  name: ASTROLABE_MODULES_LIST_ROUTE,
+  exact: true,
+  component: ModuleListView1,
+});
+
+// Module Detail View
+registerRoute({
+  path: '/astrolabe/modules/:namespace/:name',
+  sidebar: ASTROLABE_MODULES_LIST_ROUTE,
+  parent: ASTROLABE_ROOT_SIDEBAR,
+  name: ASTROLABE_MODULE_DETAILS_ROUTE,
+  exact: true,
+  component: ModuleDetailsView,
+});
+
+console.log('Astrolabe Plugin registered.');
