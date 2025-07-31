@@ -2,15 +2,10 @@ import { registerRoute, registerSidebarEntry } from '@kinvolk/headlamp-plugin/li
 import { ModuleListView, ModuleDetailsView, AstrolabeModule } from './module';
 import { StackDetailsView, StackListView } from './stack';
 
-const ASTROLABE_ROOT_SIDEBAR = 'astrolabe';
-const ASTROLABE_MODULES_LIST_ROUTE = 'modules';
-const ASTROLABE_MODULE_DETAILS_ROUTE = 'module';
-const ASTROLABE_STACKS_LIST_ROUTE = 'stacks';
-
 // Register Root Sidebar Entries
 registerSidebarEntry({
   parent: null, // Top-level entry
-  name: ASTROLABE_ROOT_SIDEBAR,
+  name: 'astrolabe',
   label: 'Astrolabe',
   icon: 'mdi:cow',
   url: '/astrolabe',
@@ -18,43 +13,25 @@ registerSidebarEntry({
 
 // Register Modules Sidebar Entry
 registerSidebarEntry({
-  parent: ASTROLABE_ROOT_SIDEBAR,
-  name: ASTROLABE_MODULES_LIST_ROUTE,
+  parent: 'astrolabe',
+  name: 'modules',
   label: 'Modules',
   url: '/astrolabe/modules',
 });
 
 // Register Stacks Sidebar Entry
 registerSidebarEntry({
-  parent: ASTROLABE_ROOT_SIDEBAR,
-  name: ASTROLABE_STACKS_LIST_ROUTE,
+  parent: 'astrolabe',
+  name: 'stacks',
   label: 'Stacks',
   url: '/astrolabe/stacks',
 });
 
-// Stacks List View
-registerRoute({
-  path: '/astrolabe/stacks',
-  sidebar: ASTROLABE_STACKS_LIST_ROUTE,
-  name: ASTROLABE_STACKS_LIST_ROUTE,
-  exact: true,
-  component: StackListView,
-});
-
-// Stack Detail View
-registerRoute({
-  path: '/astrolabe/stacks/:namespace/:name',
-  sidebar: ASTROLABE_STACKS_LIST_ROUTE,
-  parent: ASTROLABE_ROOT_SIDEBAR,
-  name: ASTROLABE_STACKS_LIST_ROUTE,
-  exact: true,
-  component: StackDetailsView,
-});
-
+// Root Route for Astrolabe
 registerRoute({
   path: '/astrolabe',
-  sidebar: ASTROLABE_MODULES_LIST_ROUTE,
-  name: ASTROLABE_MODULES_LIST_ROUTE,
+  sidebar: 'astrolabe',
+  name: 'astrolabe',
   exact: true,
   component: AstrolabeModuleListView,
 });
@@ -62,8 +39,8 @@ registerRoute({
 // Module List View
 registerRoute({
   path: '/astrolabe/modules',
-  sidebar: ASTROLABE_MODULES_LIST_ROUTE,
-  name: ASTROLABE_MODULES_LIST_ROUTE,
+  sidebar: 'modules',
+  name: 'modules',
   exact: true,
   component: ModuleListView,
 });
@@ -71,11 +48,30 @@ registerRoute({
 // Module Detail View
 registerRoute({
   path: '/astrolabe/modules/:namespace/:name',
-  sidebar: ASTROLABE_MODULES_LIST_ROUTE,
-  parent: ASTROLABE_ROOT_SIDEBAR,
-  name: ASTROLABE_MODULE_DETAILS_ROUTE,
+  sidebar: 'modules',
+  parent: 'astrolabe/modules',
+  name: 'module',
   exact: true,
   component: ModuleDetailsView,
+});
+
+// Stacks List View
+registerRoute({
+  path: '/astrolabe/stacks',
+  sidebar: 'stacks',
+  name: 'stacks',
+  exact: true,
+  component: StackListView,
+});
+
+// Stack Detail View
+registerRoute({
+  path: '/astrolabe/stacks/:namespace/:name',
+  sidebar: 'stacks',
+  parent: 'astrolabe/stacks',
+  name: 'stacks',
+  exact: true,
+  component: StackDetailsView,
 });
 
 function AstrolabeModuleListView() {

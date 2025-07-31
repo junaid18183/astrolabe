@@ -83,16 +83,17 @@ function ModuleListView() {
                 <td className="px-4 py-2">
                   <span className="inline-flex items-center">
                     <span
-                      className={`h-3 w-3 rounded-full mr-2 ${status.conditions &&
-                          status.conditions.some(
-                            (c: any) => c.type === 'Ready' && c.status === 'True'
-                          )
+                      className={`h-3 w-3 rounded-full mr-2 ${
+                        status.conditions &&
+                        status.conditions.some(
+                          (c: any) => c.type === 'Ready' && c.status === 'True'
+                        )
                           ? 'bg-green-500'
                           : 'bg-gray-400'
-                        }`}
+                      }`}
                     ></span>
                     {status.conditions &&
-                      status.conditions.some((c: any) => c.type === 'Ready' && c.status === 'True')
+                    status.conditions.some((c: any) => c.type === 'Ready' && c.status === 'True')
                       ? 'Ready'
                       : 'Not Ready'}
                   </span>
@@ -242,17 +243,17 @@ function ModuleDetailsView() {
           rows={
             status.requirements
               ? [
-                {
-                  name: 'Terraform Version',
-                  value: status.requirements.terraform?.required_version || '-',
-                },
-                ...(status.requirements.required_providers
-                  ? Object.entries(status.requirements.required_providers).map(([prov, ver]) => ({
-                    name: `Provider: ${prov}`,
-                    value: String(ver),
-                  }))
-                  : []),
-              ]
+                  {
+                    name: 'Terraform Version',
+                    value: status.requirements.terraform?.required_version || '-',
+                  },
+                  ...(status.requirements.required_providers
+                    ? Object.entries(status.requirements.required_providers).map(([prov, ver]) => ({
+                        name: `Provider: ${prov}`,
+                        value: String(ver),
+                      }))
+                    : []),
+                ]
               : [{ name: 'No requirements', value: '-' }]
           }
         />
