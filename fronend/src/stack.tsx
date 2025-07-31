@@ -22,7 +22,95 @@ const AstrolabeStack = makeCustomResourceClass({
 
 // Define Stack List View Component
 function StackListView() {
-  return <div>Hello Headlamp Stacks!</div>;
+  const [stacks, error] = AstrolabeStack.useList();
+
+  if (error) {
+    // @ts-ignore Error type is not well defined
+    return <div>Error loading stacks: {(error as Error).message}</div>;
+  }
+  if (!stacks) {
+    return <div>Loading...</div>;
+  }
+
+  return (
+    <div className="overflow-x-auto">
+      <table className="min-w-full bg-white dark:bg-gray-900 border rounded shadow">
+        <thead>
+          <tr className="bg-gray-100 dark:bg-gray-800">
+            <th className="px-4 py-2 text-left">Name</th>
+            <th className="px-4 py-2 text-left">Namespace</th>
+            <th className="px-4 py-2 text-left">Phase</th>
+            <th className="px-4 py-2 text-left">Status</th>
+            <th className="px-4 py-2 text-left">Ready</th>
+            <th className="px-4 py-2 text-left">Age</th>
+            <th className="px-4 py-2 text-left">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {stacks.map((stack: KubeObjectInterface, index: number) => {
+            const { spec = {}, status = {}, metadata = {} } = stack.jsonData || {};
+            const name = stack.getName ? stack.getName() : metadata?.name || '-';
+            const namespace = stack.getNamespace
+              ? stack.getNamespace()
+              : metadata?.namespace || '-';
+            const clusterName = stack._clusterName || '-';
+            const linkPath =
+              name !== '-' && namespace !== '-' && clusterName !== '-'
+                ? `/c/${clusterName}/astrolabe/stacks/${namespace}/${name}`
+                : undefined;
+            // Age calculation
+            let age = '-';
+            if (metadata.creationTimestamp) {
+              const created = new Date(metadata.creationTimestamp);
+              const now = new Date();
+              const diffMs = now.getTime() - created.getTime();
+              const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+              age = diffDays > 0 ? `${diffDays}d` : `${Math.floor(diffMs / (1000 * 60 * 60))}h`;
+            }
+            return (
+              <tr key={index} className="border-b hover:bg-gray-50 dark:hover:bg-gray-800">
+                <td className="px-4 py-2">
+                  {linkPath ? (
+                    <a href={linkPath} className="text-blue-600 hover:underline">
+                      {name}
+                    </a>
+                  ) : (
+                    <span>{name}</span>
+                  )}
+                </td>
+                <td className="px-4 py-2">{namespace}</td>
+                <td className="px-4 py-2">{status.phase || '-'}</td>
+                <td className="px-4 py-2">{status.status || '-'}</td>
+                <td className="px-4 py-2">
+                  <span className="inline-flex items-center">
+                    <span
+                      className={`h-3 w-3 rounded-full mr-2 ${
+                        status.ready === true ? 'bg-green-500' : 'bg-gray-400'
+                      }`}
+                    ></span>
+                    {status.ready === true ? 'Ready' : 'Not Ready'}
+                  </span>
+                </td>
+                <td className="px-4 py-2">{age}</td>
+                <td className="px-4 py-2">
+                  {linkPath ? (
+                    <a
+                      href={linkPath}
+                      className="px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
+                    >
+                      View
+                    </a>
+                  ) : (
+                    <span>-</span>
+                  )}
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
 }
 
 // Define Stack Details View Component
@@ -65,9 +153,9 @@ function StackDetailsView() {
           rows={
             spec.backendConfig
               ? [
-                { name: 'Type', value: spec.backendConfig.type || '-' },
-                { name: 'Settings', value: JSON.stringify(spec.backendConfig.settings) || '-' },
-              ]
+                  { name: 'Type', value: spec.backendConfig.type || '-' },
+                  { name: 'Settings', value: JSON.stringify(spec.backendConfig.settings) || '-' },
+                ]
               : [{ name: 'No backend config', value: '-' }]
           }
         />
@@ -119,9 +207,9 @@ function StackDetailsView() {
           rows={
             status.outputs
               ? Object.entries(status.outputs).map(([key, value]) => ({
-                name: key,
-                value: JSON.stringify(value),
-              }))
+                  name: key,
+                  value: JSON.stringify(value),
+                }))
               : [{ name: 'No outputs', value: '-' }]
           }
         />
