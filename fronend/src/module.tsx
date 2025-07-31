@@ -38,87 +38,107 @@ function ModuleListView() {
   }
 
   return (
-    <div className="overflow-x-auto">
-      <table className="min-w-full bg-white dark:bg-gray-900 border rounded shadow">
-        <thead>
-          <tr className="bg-gray-100 dark:bg-gray-800">
-            <th className="px-4 py-2 text-left">Name</th>
-            <th className="px-4 py-2 text-left">Namespace</th>
-            <th className="px-4 py-2 text-left">Source Type</th>
-            <th className="px-4 py-2 text-left">Source URL</th>
-            <th className="px-4 py-2 text-left">Version</th>
-            <th className="px-4 py-2 text-left">Status</th>
-            <th className="px-4 py-2 text-left">Last Synced</th>
-            <th className="px-4 py-2 text-left">Cluster</th>
-            <th className="px-4 py-2 text-left">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {modules.map((module: KubeObjectInterface, index: number) => {
-            const { spec = {}, status = {}, metadata = {} } = module.jsonData || {};
-            const name = module.getName ? module.getName() : metadata?.name || '-';
-            const namespace = module.getNamespace
-              ? module.getNamespace()
-              : metadata?.namespace || '-';
-            const clusterName = module._clusterName || '-';
-            const linkPath =
-              name !== '-' && namespace !== '-' && clusterName !== '-'
-                ? `/c/${clusterName}/astrolabe/modules/${namespace}/${name}`
-                : undefined;
-            return (
-              <tr key={index} className="border-b hover:bg-gray-50 dark:hover:bg-gray-800">
-                <td className="px-4 py-2">
-                  {linkPath ? (
-                    <a href={linkPath} className="text-blue-600 hover:underline">
-                      {name}
-                    </a>
-                  ) : (
-                    <span>{name}</span>
-                  )}
-                </td>
-                <td className="px-4 py-2">{namespace}</td>
-                <td className="px-4 py-2">{spec.source?.type || '-'}</td>
-                <td className="px-4 py-2">{spec.source?.url || '-'}</td>
-                <td className="px-4 py-2">{spec.source?.version || '-'}</td>
-                <td className="px-4 py-2">
-                  <span className="inline-flex items-center">
-                    <span
-                      className={`h-3 w-3 rounded-full mr-2 ${
-                        status.conditions &&
-                        status.conditions.some(
-                          (c: any) => c.type === 'Ready' && c.status === 'True'
-                        )
-                          ? 'bg-green-500'
-                          : 'bg-gray-400'
-                      }`}
-                    ></span>
-                    {status.conditions &&
-                    status.conditions.some((c: any) => c.type === 'Ready' && c.status === 'True')
-                      ? 'Ready'
-                      : 'Not Ready'}
-                  </span>
-                </td>
-                <td className="px-4 py-2">{status.lastSynced || '-'}</td>
-                <td className="px-4 py-2">{module._clusterName}</td>
-                <td className="px-4 py-2">
-                  {/* Actions placeholder */}
-                  {linkPath ? (
-                    <a
-                      href={linkPath}
-                      className="px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
-                    >
-                      View
-                    </a>
-                  ) : (
-                    <span>-</span>
-                  )}
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-    </div>
+    <SectionBox title="Modules">
+      <Table
+        columns={[
+          {
+            header: 'Name',
+            accessorFn: (module: KubeObjectInterface) => {
+              const { metadata = {} } = module.jsonData || {};
+              const name = module.getName ? module.getName() : metadata?.name || '-';
+              const namespace = module.getNamespace
+                ? module.getNamespace()
+                : metadata?.namespace || '-';
+              const clusterName = module._clusterName || '-';
+              const linkPath =
+                name !== '-' && namespace !== '-' && clusterName !== '-'
+                  ? `/c/${clusterName}/astrolabe/modules/${namespace}/${name}`
+                  : undefined;
+              return linkPath ? (
+                <a href={linkPath} className="text-blue-600 hover:underline">
+                  {name}
+                </a>
+              ) : (
+                <span>{name}</span>
+              );
+            },
+          },
+          {
+            header: 'Namespace',
+            accessorFn: (module: KubeObjectInterface) =>
+              module.getNamespace
+                ? module.getNamespace()
+                : module.jsonData?.metadata?.namespace || '-',
+          },
+          {
+            header: 'Source Type',
+            accessorFn: (module: KubeObjectInterface) => module.jsonData?.spec?.source?.type || '-',
+          },
+          {
+            header: 'Source URL',
+            accessorFn: (module: KubeObjectInterface) => module.jsonData?.spec?.source?.url || '-',
+          },
+          {
+            header: 'Version',
+            accessorFn: (module: KubeObjectInterface) =>
+              module.jsonData?.spec?.source?.version || '-',
+          },
+          {
+            header: 'Status',
+            accessorFn: (module: KubeObjectInterface) => {
+              const status = module.jsonData?.status;
+              const ready =
+                status?.conditions &&
+                status.conditions.some((c: any) => c.type === 'Ready' && c.status === 'True');
+              return (
+                <span className="inline-flex items-center">
+                  <span
+                    className={`h-3 w-3 rounded-full mr-2 ${
+                      ready ? 'bg-green-500' : 'bg-gray-400'
+                    }`}
+                  ></span>
+                  {ready ? 'Ready' : 'Not Ready'}
+                </span>
+              );
+            },
+          },
+          {
+            header: 'Last Synced',
+            accessorFn: (module: KubeObjectInterface) => module.jsonData?.status?.lastSynced || '-',
+          },
+          {
+            header: 'Cluster',
+            accessorFn: (module: KubeObjectInterface) => module._clusterName || '-',
+          },
+          {
+            header: 'Actions',
+            accessorFn: (module: KubeObjectInterface) => {
+              const { metadata = {} } = module.jsonData || {};
+              const name = module.getName ? module.getName() : metadata?.name || '-';
+              const namespace = module.getNamespace
+                ? module.getNamespace()
+                : metadata?.namespace || '-';
+              const clusterName = module._clusterName || '-';
+              const linkPath =
+                name !== '-' && namespace !== '-' && clusterName !== '-'
+                  ? `/c/${clusterName}/astrolabe/modules/${namespace}/${name}`
+                  : undefined;
+              return linkPath ? (
+                <a
+                  href={linkPath}
+                  className="px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
+                >
+                  View
+                </a>
+              ) : (
+                <span>-</span>
+              );
+            },
+          },
+        ]}
+        data={modules}
+      />
+    </SectionBox>
   );
 }
 

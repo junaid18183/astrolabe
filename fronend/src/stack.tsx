@@ -1,12 +1,13 @@
 import { KubeObjectInterface } from '@kinvolk/headlamp-plugin/lib/K8s/cluster';
 import { makeCustomResourceClass } from '@kinvolk/headlamp-plugin/lib/K8s/crd';
 import { useParams } from 'react-router-dom';
-import { Box, Table, TableBody, TableCell, TableHead, TableRow } from '@mui/material';
+import { Box } from '@mui/material';
 import {
   ConditionsTable,
   MainInfoSection,
   NameValueTable,
   SectionBox,
+  Table,
 } from '@kinvolk/headlamp-plugin/lib/CommonComponents';
 
 // Define constants for Astrolabe Resource Classes
@@ -33,83 +34,106 @@ function StackListView() {
   }
 
   return (
-    <div className="overflow-x-auto">
-      <table className="min-w-full bg-white dark:bg-gray-900 border rounded shadow">
-        <thead>
-          <tr className="bg-gray-100 dark:bg-gray-800">
-            <th className="px-4 py-2 text-left">Name</th>
-            <th className="px-4 py-2 text-left">Namespace</th>
-            <th className="px-4 py-2 text-left">Phase</th>
-            <th className="px-4 py-2 text-left">Status</th>
-            <th className="px-4 py-2 text-left">Ready</th>
-            <th className="px-4 py-2 text-left">Age</th>
-            <th className="px-4 py-2 text-left">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {stacks.map((stack: KubeObjectInterface, index: number) => {
-            const { spec = {}, status = {}, metadata = {} } = stack.jsonData || {};
-            const name = stack.getName ? stack.getName() : metadata?.name || '-';
-            const namespace = stack.getNamespace
-              ? stack.getNamespace()
-              : metadata?.namespace || '-';
-            const clusterName = stack._clusterName || '-';
-            const linkPath =
-              name !== '-' && namespace !== '-' && clusterName !== '-'
-                ? `/c/${clusterName}/astrolabe/stacks/${namespace}/${name}`
-                : undefined;
-            // Age calculation
-            let age = '-';
-            if (metadata.creationTimestamp) {
-              const created = new Date(metadata.creationTimestamp);
-              const now = new Date();
-              const diffMs = now.getTime() - created.getTime();
-              const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-              age = diffDays > 0 ? `${diffDays}d` : `${Math.floor(diffMs / (1000 * 60 * 60))}h`;
-            }
-            return (
-              <tr key={index} className="border-b hover:bg-gray-50 dark:hover:bg-gray-800">
-                <td className="px-4 py-2">
-                  {linkPath ? (
-                    <a href={linkPath} className="text-blue-600 hover:underline">
-                      {name}
-                    </a>
-                  ) : (
-                    <span>{name}</span>
-                  )}
-                </td>
-                <td className="px-4 py-2">{namespace}</td>
-                <td className="px-4 py-2">{status.phase || '-'}</td>
-                <td className="px-4 py-2">{status.status || '-'}</td>
-                <td className="px-4 py-2">
-                  <span className="inline-flex items-center">
-                    <span
-                      className={`h-3 w-3 rounded-full mr-2 ${
-                        status.ready === true ? 'bg-green-500' : 'bg-gray-400'
-                      }`}
-                    ></span>
-                    {status.ready === true ? 'Ready' : 'Not Ready'}
-                  </span>
-                </td>
-                <td className="px-4 py-2">{age}</td>
-                <td className="px-4 py-2">
-                  {linkPath ? (
-                    <a
-                      href={linkPath}
-                      className="px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
-                    >
-                      View
-                    </a>
-                  ) : (
-                    <span>-</span>
-                  )}
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-    </div>
+    <SectionBox title="Stacks">
+      <Table
+        columns={[
+          {
+            header: 'Name',
+            accessorFn: (stack: KubeObjectInterface) => {
+              const { metadata = {} } = stack.jsonData || {};
+              const name = stack.getName ? stack.getName() : metadata?.name || '-';
+              const namespace = stack.getNamespace
+                ? stack.getNamespace()
+                : metadata?.namespace || '-';
+              const clusterName = stack._clusterName || '-';
+              const linkPath =
+                name !== '-' && namespace !== '-' && clusterName !== '-'
+                  ? `/c/${clusterName}/astrolabe/stacks/${namespace}/${name}`
+                  : undefined;
+              return linkPath ? (
+                <a href={linkPath} className="text-blue-600 hover:underline">
+                  {name}
+                </a>
+              ) : (
+                <span>{name}</span>
+              );
+            },
+          },
+          {
+            header: 'Namespace',
+            accessorFn: (stack: KubeObjectInterface) =>
+              stack.getNamespace
+                ? stack.getNamespace()
+                : stack.jsonData?.metadata?.namespace || '-',
+          },
+          {
+            header: 'Phase',
+            accessorFn: (stack: KubeObjectInterface) => stack.jsonData?.status?.phase || '-',
+          },
+          {
+            header: 'Status',
+            accessorFn: (stack: KubeObjectInterface) => stack.jsonData?.status?.status || '-',
+          },
+          {
+            header: 'Ready',
+            accessorFn: (stack: KubeObjectInterface) => {
+              const ready = stack.jsonData?.status?.ready === true;
+              return (
+                <span className="inline-flex items-center">
+                  <span
+                    className={`h-3 w-3 rounded-full mr-2 ${
+                      ready ? 'bg-green-500' : 'bg-gray-400'
+                    }`}
+                  ></span>
+                  {ready ? 'Ready' : 'Not Ready'}
+                </span>
+              );
+            },
+          },
+          {
+            header: 'Age',
+            accessorFn: (stack: KubeObjectInterface) => {
+              const metadata = stack.jsonData?.metadata || {};
+              let age = '-';
+              if (metadata.creationTimestamp) {
+                const created = new Date(metadata.creationTimestamp);
+                const now = new Date();
+                const diffMs = now.getTime() - created.getTime();
+                const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+                age = diffDays > 0 ? `${diffDays}d` : `${Math.floor(diffMs / (1000 * 60 * 60))}h`;
+              }
+              return age;
+            },
+          },
+          {
+            header: 'Actions',
+            accessorFn: (stack: KubeObjectInterface) => {
+              const { metadata = {} } = stack.jsonData || {};
+              const name = stack.getName ? stack.getName() : metadata?.name || '-';
+              const namespace = stack.getNamespace
+                ? stack.getNamespace()
+                : metadata?.namespace || '-';
+              const clusterName = stack._clusterName || '-';
+              const linkPath =
+                name !== '-' && namespace !== '-' && clusterName !== '-'
+                  ? `/c/${clusterName}/astrolabe/stacks/${namespace}/${name}`
+                  : undefined;
+              return linkPath ? (
+                <a
+                  href={linkPath}
+                  className="px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
+                >
+                  View
+                </a>
+              ) : (
+                <span>-</span>
+              );
+            },
+          },
+        ]}
+        data={stacks}
+      />
+    </SectionBox>
   );
 }
 
@@ -172,34 +196,24 @@ function StackDetailsView() {
       </SectionBox>
 
       <SectionBox title="Modules">
-        <Box sx={{ overflowX: 'auto' }}>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>Name</TableCell>
-                <TableCell>Depends On</TableCell>
-                <TableCell>Variables</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {Array.isArray(spec.modules) && spec.modules.length > 0 ? (
-                spec.modules.map((m: any, idx: number) => (
-                  <TableRow key={idx}>
-                    <TableCell>{m.name}</TableCell>
-                    <TableCell>
-                      {Array.isArray(m.dependsOn) ? m.dependsOn.join(', ') : '-'}
-                    </TableCell>
-                    <TableCell>{m.variables ? JSON.stringify(m.variables) : '-'}</TableCell>
-                  </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={3}>No modules</TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </Box>
+        <Table
+          columns={[
+            {
+              header: 'Name',
+              accessorFn: (m: any) => m.name || '-',
+            },
+            {
+              header: 'Depends On',
+              accessorFn: (m: any) => (Array.isArray(m.dependsOn) ? m.dependsOn.join(', ') : '-'),
+            },
+            {
+              header: 'Variables',
+              accessorFn: (m: any) => (m.variables ? JSON.stringify(m.variables) : '-'),
+            },
+          ]}
+          data={Array.isArray(spec.modules) ? spec.modules : []}
+          emptyMessage="No modules"
+        />
       </SectionBox>
 
       <SectionBox title="Outputs">
