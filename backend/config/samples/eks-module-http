@@ -1,0 +1,9 @@
+---
+apiVersion: astrolabe.io/v1
+kind: Module
+metadata:
+  name: eks-http
+spec:
+  source:
+    type: http
+    url: "https://github.com/terraform-aws-modules/terraform-aws-eks/archive/refs/tags/v20.37.2.zip"

@@ -1,0 +1,10 @@
+apiVersion: astrolabe.io/v1
+kind: Module
+metadata:
+  name: eks-git
+spec:
+  source:
+    type: git
+    url: "https://github.com/terraform-aws-modules/terraform-aws-eks.git"
+    version: "v20.37.2"
+
