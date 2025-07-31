@@ -98,7 +98,9 @@ function StackDetailsView() {
                 spec.modules.map((m: any, idx: number) => (
                   <TableRow key={idx}>
                     <TableCell>{m.name}</TableCell>
-                    <TableCell>{Array.isArray(m.dependsOn) ? m.dependsOn.join(', ') : '-'}</TableCell>
+                    <TableCell>
+                      {Array.isArray(m.dependsOn) ? m.dependsOn.join(', ') : '-'}
+                    </TableCell>
                     <TableCell>{m.variables ? JSON.stringify(m.variables) : '-'}</TableCell>
                   </TableRow>
                 ))
@@ -116,7 +118,10 @@ function StackDetailsView() {
         <NameValueTable
           rows={
             status.outputs
-              ? Object.entries(status.outputs).map(([key, value]) => ({ name: key, value: JSON.stringify(value) }))
+              ? Object.entries(status.outputs).map(([key, value]) => ({
+                name: key,
+                value: JSON.stringify(value),
+              }))
               : [{ name: 'No outputs', value: '-' }]
           }
         />

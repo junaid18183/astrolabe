@@ -1,5 +1,7 @@
 import { KubeObjectInterface } from '@kinvolk/headlamp-plugin/lib/K8s/cluster';
 import { makeCustomResourceClass } from '@kinvolk/headlamp-plugin/lib/K8s/crd';
+import { useParams } from 'react-router-dom';
+import { Box } from '@mui/material';
 import {
   ConditionsTable,
   Link,
@@ -36,160 +38,89 @@ function ModuleListView() {
   }
 
   return (
-    <div>
-      {modules.map((module: KubeObjectInterface, index: number) => {
-        const { spec = {}, status = {}, metadata = {} } = module.jsonData || {};
-        return (
-          <div key={index} className="mb-4 p-4 border rounded shadow-sm">
-            <p>
-              <strong>Name:</strong> {module.getName()}
-            </p>
-            <p>
-              <strong>Namespace:</strong> {module.getNamespace()}
-            </p>
-            <p>
-              <strong>Source Type:</strong> {spec.source?.type || '-'}
-            </p>
-            <p>
-              <strong>Source URL:</strong> {spec.source?.url || '-'}
-            </p>
-            <p>
-              <strong>Source Path:</strong> {spec.source?.path || '-'}
-            </p>
-            <p>
-              <strong>Version:</strong> {spec.source?.version || '-'}
-            </p>
-            <p>
-              <strong>Description:</strong> {status.description || '-'}
-            </p>
-            <p>
-              <strong>Last Synced:</strong> {status.lastSynced || '-'}
-            </p>
-            <p>
-              <strong>Cluster Name:</strong> {module._clusterName}
-            </p>
-            <div>
-              <strong>Providers:</strong>
-              <ul>
-                {(status.providers ?? []).length > 0 ? (
-                  status.providers.map((p: any, i: number) => (
-                    <li key={i}>
-                      {p.name} ({p.source || '-'}) {p.version ? '@ ' + p.version : ''}
-                    </li>
-                  ))
-                ) : (
-                  <li>-</li>
-                )}
-              </ul>
-            </div>
-            <div>
-              <strong>Inputs:</strong>
-              <ul>
-                {(status.inputs ?? []).length > 0 ? (
-                  status.inputs.map((input: any, i: number) => (
-                    <li key={i}>
-                      {input.name}: {input.type}
-                      {input.required ? ' (required)' : ''}
-                      {input.sensitive ? ' (sensitive)' : ''}
-                      {input.default !== undefined ? ' (default: ' + input.default + ')' : ''}{' '}
-                      {input.description ? '- ' + input.description : ''}
-                    </li>
-                  ))
-                ) : (
-                  <li>-</li>
-                )}
-              </ul>
-            </div>
-            <div>
-              <strong>Outputs:</strong>
-              <ul>
-                {(status.outputs ?? []).length > 0 ? (
-                  status.outputs.map((output: any, i: number) => (
-                    <li key={i}>
-                      {output.name}: {output.type}
-                      {output.sensitive ? ' (sensitive)' : ''}
-                      {output.description ? ' - ' + output.description : ''}
-                    </li>
-                  ))
-                ) : (
-                  <li>-</li>
-                )}
-              </ul>
-            </div>
-            <div>
-              <strong>Resources:</strong>
-              <ul>
-                {(status.resources ?? []).length > 0 ? (
-                  status.resources.map((r: any, i: number) => (
-                    <li key={i}>
-                      {r.name}: {r.type}
-                    </li>
-                  ))
-                ) : (
-                  <li>-</li>
-                )}
-              </ul>
-            </div>
-            <div>
-              <strong>Submodules:</strong>
-              <ul>
-                {(status.submodules ?? []).length > 0 ? (
-                  status.submodules.map((s: any, i: number) => (
-                    <li key={i}>
-                      {s.name}: {s.source}
-                    </li>
-                  ))
-                ) : (
-                  <li>-</li>
-                )}
-              </ul>
-            </div>
-            <div>
-              <strong>Requirements:</strong>
-              <ul>
-                {status.requirements ? (
-                  <>
-                    <li>
-                      Terraform Version: {status.requirements.terraform?.required_version || '-'}
-                    </li>
-                    {status.requirements.required_providers &&
-                      Object.entries(status.requirements.required_providers).map(
-                        ([prov, ver], i) => (
-                          <li key={i}>
-                            Provider: {prov} - {String(ver)}
-                          </li>
+    <div className="overflow-x-auto">
+      <table className="min-w-full bg-white dark:bg-gray-900 border rounded shadow">
+        <thead>
+          <tr className="bg-gray-100 dark:bg-gray-800">
+            <th className="px-4 py-2 text-left">Name</th>
+            <th className="px-4 py-2 text-left">Namespace</th>
+            <th className="px-4 py-2 text-left">Source Type</th>
+            <th className="px-4 py-2 text-left">Source URL</th>
+            <th className="px-4 py-2 text-left">Version</th>
+            <th className="px-4 py-2 text-left">Status</th>
+            <th className="px-4 py-2 text-left">Last Synced</th>
+            <th className="px-4 py-2 text-left">Cluster</th>
+            <th className="px-4 py-2 text-left">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {modules.map((module: KubeObjectInterface, index: number) => {
+            const { spec = {}, status = {}, metadata = {} } = module.jsonData || {};
+            const name = module.getName ? module.getName() : metadata?.name || '-';
+            const namespace = module.getNamespace
+              ? module.getNamespace()
+              : metadata?.namespace || '-';
+            const clusterName = module._clusterName || '-';
+            const linkPath =
+              name !== '-' && namespace !== '-' && clusterName !== '-'
+                ? `/c/${clusterName}/astrolabe/modules/${namespace}/${name}`
+                : undefined;
+            return (
+              <tr key={index} className="border-b hover:bg-gray-50 dark:hover:bg-gray-800">
+                <td className="px-4 py-2">
+                  {linkPath ? (
+                    <a href={linkPath} className="text-blue-600 hover:underline">
+                      {name}
+                    </a>
+                  ) : (
+                    <span>{name}</span>
+                  )}
+                </td>
+                <td className="px-4 py-2">{namespace}</td>
+                <td className="px-4 py-2">{spec.source?.type || '-'}</td>
+                <td className="px-4 py-2">{spec.source?.url || '-'}</td>
+                <td className="px-4 py-2">{spec.source?.version || '-'}</td>
+                <td className="px-4 py-2">
+                  <span className="inline-flex items-center">
+                    <span
+                      className={`h-3 w-3 rounded-full mr-2 ${
+                        status.conditions &&
+                        status.conditions.some(
+                          (c: any) => c.type === 'Ready' && c.status === 'True'
                         )
-                      )}
-                  </>
-                ) : (
-                  <li>-</li>
-                )}
-              </ul>
-            </div>
-            <div>
-              <strong>Conditions:</strong>
-              <ul>
-                {(status.conditions ?? []).length > 0 ? (
-                  status.conditions.map((cond: any, i: number) => (
-                    <li key={i}>
-                      {cond.type}: {cond.status} ({cond.reason}){' '}
-                      {cond.message ? '- ' + cond.message : ''}
-                    </li>
-                  ))
-                ) : (
-                  <li>-</li>
-                )}
-              </ul>
-            </div>
-          </div>
-        );
-      })}
+                          ? 'bg-green-500'
+                          : 'bg-gray-400'
+                      }`}
+                    ></span>
+                    {status.conditions &&
+                    status.conditions.some((c: any) => c.type === 'Ready' && c.status === 'True')
+                      ? 'Ready'
+                      : 'Not Ready'}
+                  </span>
+                </td>
+                <td className="px-4 py-2">{status.lastSynced || '-'}</td>
+                <td className="px-4 py-2">{module._clusterName}</td>
+                <td className="px-4 py-2">
+                  {/* Actions placeholder */}
+                  {linkPath ? (
+                    <a
+                      href={linkPath}
+                      className="px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
+                    >
+                      View
+                    </a>
+                  ) : (
+                    <span>-</span>
+                  )}
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
     </div>
   );
 }
-
-import { useParams } from 'react-router-dom';
-import { Box } from '@mui/material';
 
 function ModuleDetailsView() {
   const { namespace, name } = useParams<{ namespace: string; name: string }>();
@@ -231,7 +162,10 @@ function ModuleDetailsView() {
         <NameValueTable
           rows={
             Array.isArray(status.providers) && status.providers.length > 0
-              ? status.providers.map((p: any) => ({ name: p.name, value: `${p.source || '-'}${p.version ? ' @ ' + p.version : ''}` }))
+              ? status.providers.map((p: any) => ({
+                  name: p.name,
+                  value: `${p.source || '-'}${p.version ? ' @ ' + p.version : ''}`,
+                }))
               : [{ name: 'No providers', value: '-' }]
           }
         />
@@ -242,9 +176,13 @@ function ModuleDetailsView() {
           rows={
             Array.isArray(status.inputs) && status.inputs.length > 0
               ? status.inputs.map((input: any) => ({
-                name: input.name,
-                value: `${input.type}${input.required ? ' (required)' : ''}${input.sensitive ? ' (sensitive)' : ''}${input.default !== undefined ? ' (default: ' + input.default + ')' : ''}${input.description ? ' - ' + input.description : ''}`,
-              }))
+                  name: input.name,
+                  value: `${input.type}${input.required ? ' (required)' : ''}${
+                    input.sensitive ? ' (sensitive)' : ''
+                  }${input.default !== undefined ? ' (default: ' + input.default + ')' : ''}${
+                    input.description ? ' - ' + input.description : ''
+                  }`,
+                }))
               : [{ name: 'No inputs', value: '-' }]
           }
         />
@@ -255,9 +193,11 @@ function ModuleDetailsView() {
           rows={
             Array.isArray(status.outputs) && status.outputs.length > 0
               ? status.outputs.map((output: any) => ({
-                name: output.name,
-                value: `${output.type}${output.sensitive ? ' (sensitive)' : ''}${output.description ? ' - ' + output.description : ''}`,
-              }))
+                  name: output.name,
+                  value: `${output.type}${output.sensitive ? ' (sensitive)' : ''}${
+                    output.description ? ' - ' + output.description : ''
+                  }`,
+                }))
               : [{ name: 'No outputs', value: '-' }]
           }
         />
@@ -288,13 +228,17 @@ function ModuleDetailsView() {
           rows={
             status.requirements
               ? [
-                { name: 'Terraform Version', value: status.requirements.terraform?.required_version || '-' },
-                ...(
-                  status.requirements.required_providers
-                    ? Object.entries(status.requirements.required_providers).map(([prov, ver]) => ({ name: `Provider: ${prov}`, value: String(ver) }))
-                    : []
-                ),
-              ]
+                  {
+                    name: 'Terraform Version',
+                    value: status.requirements.terraform?.required_version || '-',
+                  },
+                  ...(status.requirements.required_providers
+                    ? Object.entries(status.requirements.required_providers).map(([prov, ver]) => ({
+                        name: `Provider: ${prov}`,
+                        value: String(ver),
+                      }))
+                    : []),
+                ]
               : [{ name: 'No requirements', value: '-' }]
           }
         />
