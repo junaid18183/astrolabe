@@ -83,17 +83,16 @@ function ModuleListView() {
                 <td className="px-4 py-2">
                   <span className="inline-flex items-center">
                     <span
-                      className={`h-3 w-3 rounded-full mr-2 ${
-                        status.conditions &&
-                        status.conditions.some(
-                          (c: any) => c.type === 'Ready' && c.status === 'True'
-                        )
+                      className={`h-3 w-3 rounded-full mr-2 ${status.conditions &&
+                          status.conditions.some(
+                            (c: any) => c.type === 'Ready' && c.status === 'True'
+                          )
                           ? 'bg-green-500'
                           : 'bg-gray-400'
-                      }`}
+                        }`}
                     ></span>
                     {status.conditions &&
-                    status.conditions.some((c: any) => c.type === 'Ready' && c.status === 'True')
+                      status.conditions.some((c: any) => c.type === 'Ready' && c.status === 'True')
                       ? 'Ready'
                       : 'Not Ready'}
                   </span>
@@ -159,16 +158,17 @@ function ModuleDetailsView() {
       />
 
       <SectionBox title="Providers">
-        <NameValueTable
-          rows={
-            Array.isArray(status.providers) && status.providers.length > 0
-              ? status.providers.map((p: any) => ({
-                  name: p.name,
-                  value: `${p.source || '-'}${p.version ? ' @ ' + p.version : ''}`,
-                }))
-              : [{ name: 'No providers', value: '-' }]
-          }
-        />
+        {Array.isArray(status.providers) && status.providers.length > 0 ? (
+          <Table
+            columns={[
+              { header: 'Name', accessorKey: 'name' },
+              { header: 'Version', accessorFn: (p: any) => p.version || '-' },
+            ]}
+            data={status.providers}
+          />
+        ) : (
+          <NameValueTable rows={[{ name: 'No providers', value: '-' }]} />
+        )}
       </SectionBox>
 
       <SectionBox title="Inputs">
@@ -192,38 +192,49 @@ function ModuleDetailsView() {
       </SectionBox>
 
       <SectionBox title="Outputs">
-        <NameValueTable
-          rows={
-            Array.isArray(status.outputs) && status.outputs.length > 0
-              ? status.outputs.map((output: any) => ({
-                  name: output.name,
-                  value: `${output.type}${output.sensitive ? ' (sensitive)' : ''}${
-                    output.description ? ' - ' + output.description : ''
-                  }`,
-                }))
-              : [{ name: 'No outputs', value: '-' }]
-          }
-        />
+        {Array.isArray(status.outputs) && status.outputs.length > 0 ? (
+          <Table
+            columns={[
+              { header: 'Name', accessorKey: 'name' },
+              { header: 'Description', accessorFn: (output: any) => output.description || '-' },
+              {
+                header: 'Sensitive',
+                accessorFn: (output: any) => (output.sensitive ? 'Yes' : 'No'),
+              },
+            ]}
+            data={status.outputs}
+          />
+        ) : (
+          <NameValueTable rows={[{ name: 'No outputs', value: '-' }]} />
+        )}
       </SectionBox>
 
       <SectionBox title="Resources">
-        <NameValueTable
-          rows={
-            Array.isArray(status.resources) && status.resources.length > 0
-              ? status.resources.map((r: any) => ({ name: r.name, value: r.type }))
-              : [{ name: 'No resources', value: '-' }]
-          }
-        />
+        {Array.isArray(status.resources) && status.resources.length > 0 ? (
+          <Table
+            columns={[
+              { header: 'Name', accessorKey: 'name' },
+              { header: 'Type', accessorKey: 'type' },
+            ]}
+            data={status.resources}
+          />
+        ) : (
+          <NameValueTable rows={[{ name: 'No resources', value: '-' }]} />
+        )}
       </SectionBox>
 
       <SectionBox title="Submodules">
-        <NameValueTable
-          rows={
-            Array.isArray(status.submodules) && status.submodules.length > 0
-              ? status.submodules.map((s: any) => ({ name: s.name, value: s.source }))
-              : [{ name: 'No submodules', value: '-' }]
-          }
-        />
+        {Array.isArray(status.submodules) && status.submodules.length > 0 ? (
+          <Table
+            columns={[
+              { header: 'Name', accessorKey: 'name' },
+              { header: 'Source', accessorKey: 'source' },
+            ]}
+            data={status.submodules}
+          />
+        ) : (
+          <NameValueTable rows={[{ name: 'No submodules', value: '-' }]} />
+        )}
       </SectionBox>
 
       <SectionBox title="Requirements">
@@ -231,17 +242,17 @@ function ModuleDetailsView() {
           rows={
             status.requirements
               ? [
-                  {
-                    name: 'Terraform Version',
-                    value: status.requirements.terraform?.required_version || '-',
-                  },
-                  ...(status.requirements.required_providers
-                    ? Object.entries(status.requirements.required_providers).map(([prov, ver]) => ({
-                        name: `Provider: ${prov}`,
-                        value: String(ver),
-                      }))
-                    : []),
-                ]
+                {
+                  name: 'Terraform Version',
+                  value: status.requirements.terraform?.required_version || '-',
+                },
+                ...(status.requirements.required_providers
+                  ? Object.entries(status.requirements.required_providers).map(([prov, ver]) => ({
+                    name: `Provider: ${prov}`,
+                    value: String(ver),
+                  }))
+                  : []),
+              ]
               : [{ name: 'No requirements', value: '-' }]
           }
         />
