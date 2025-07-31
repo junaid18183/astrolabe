@@ -25,3 +25,4 @@ Astrolabe is a Kubernetes-native platform for managing Terraform/OpenTofu module
 
 - A toggle is provided to switch between light and dark mode.
 - Application should have a modern and clean design.
+- UI is based on headlamp plugin
