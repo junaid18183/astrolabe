@@ -172,20 +172,23 @@ function ModuleDetailsView() {
       </SectionBox>
 
       <SectionBox title="Inputs">
-        <NameValueTable
-          rows={
-            Array.isArray(status.inputs) && status.inputs.length > 0
-              ? status.inputs.map((input: any) => ({
-                  name: input.name,
-                  value: `${input.type}${input.required ? ' (required)' : ''}${
-                    input.sensitive ? ' (sensitive)' : ''
-                  }${input.default !== undefined ? ' (default: ' + input.default + ')' : ''}${
-                    input.description ? ' - ' + input.description : ''
-                  }`,
-                }))
-              : [{ name: 'No inputs', value: '-' }]
-          }
-        />
+        {Array.isArray(status.inputs) && status.inputs.length > 0 ? (
+          <Table
+            columns={[
+              { header: 'Name', accessorKey: 'name' },
+              { header: 'Description', accessorFn: (input: any) => input.description || '-' },
+              {
+                header: 'Default Value',
+                accessorFn: (input: any) =>
+                  input.default !== undefined ? String(input.default) : '-',
+              },
+              { header: 'Required', accessorFn: (input: any) => (input.required ? 'Yes' : 'No') },
+            ]}
+            data={status.inputs}
+          />
+        ) : (
+          <NameValueTable rows={[{ name: 'No inputs', value: '-' }]} />
+        )}
       </SectionBox>
 
       <SectionBox title="Outputs">
