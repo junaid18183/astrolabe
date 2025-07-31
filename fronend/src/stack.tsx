@@ -1,49 +1,43 @@
 import { KubeObjectInterface } from '@kinvolk/headlamp-plugin/lib/K8s/cluster';
 import { makeCustomResourceClass } from '@kinvolk/headlamp-plugin/lib/K8s/crd';
 import { useParams } from 'react-router-dom';
-import { Box, Tab, Tabs, Typography } from '@mui/material';
+import { Box, Table, TableBody, TableCell, TableHead, TableRow } from '@mui/material';
 import {
   ConditionsTable,
-  Link,
-  Loader,
   MainInfoSection,
   NameValueTable,
-  ResourceListView,
   SectionBox,
-  StatusLabel,
-  Table,
 } from '@kinvolk/headlamp-plugin/lib/CommonComponents';
 
-// Define functions that return the Astrolabe Resource Classes
+// Define constants for Astrolabe Resource Classes
 const astrolabeGroup = 'astrolabe.io';
 const astrolabeVersion = 'v1';
 
-const AstrolabeModule = makeCustomResourceClass({
+const AstrolabeStack = makeCustomResourceClass({
   apiInfo: [{ group: astrolabeGroup, version: astrolabeVersion }],
   isNamespaced: true,
-  singularName: 'Module',
-  pluralName: 'modules',
+  singularName: 'Stack',
+  pluralName: 'stacks',
 });
 
-// Define Detail View Wrapper Components
+// Define Stack List View Component
 function StackListView() {
-  return 'Hello Headlamp!';
+  return <div>Hello Headlamp Stacks!</div>;
 }
 
-// Define Detail View Wrapper Components
+// Define Stack Details View Component
 function StackDetailsView() {
   const { namespace, name } = useParams<{ namespace: string; name: string }>();
-  const [item, error] = AstrolabeModule.useGet(name, namespace);
+  const [item, error] = AstrolabeStack.useGet(name, namespace);
 
   if (error) {
-    // @ts-ignore Error type is not well defined
-    return <div>Error loading module: {(error as Error).message}</div>;
+    return <div>Error loading stack: {(error as Error).message}</div>;
   }
+
   if (!item) {
     return <div>Loading...</div>;
   }
 
-  // Restore original rendering
   const { spec = {}, status = {}, metadata = {} } = item.jsonData || {};
 
   return (
@@ -57,94 +51,87 @@ function StackDetailsView() {
     >
       <MainInfoSection
         resource={item}
-        title={`Module: ${metadata.name}`}
+        title={`Stack: ${metadata.name}`}
         extraInfo={[
-          { name: 'Source Type', value: spec.source?.type || '-' },
-          { name: 'Source URL', value: spec.source?.url || '-' },
-          { name: 'Version', value: spec.source?.version || '-' },
+          { name: 'Phase', value: status.phase || '-' },
+          { name: 'Status', value: status.status || '-' },
+          { name: 'Ready', value: status.ready !== undefined ? String(status.ready) : '-' },
+          { name: 'Summary', value: status.summary || '-' },
         ]}
       />
-      <SectionBox title="Providers">
+
+      <SectionBox title="Backend Config">
         <NameValueTable
           rows={
-            Array.isArray(status.providers) && status.providers.length > 0
-              ? status.providers.map((p: any) => ({
-                  name: p.name,
-                  value: `${p.source || '-'}${p.version ? ' @ ' + p.version : ''}`,
-                }))
-              : [{ name: 'No providers', value: '-' }]
+            spec.backendConfig
+              ? [
+                { name: 'Type', value: spec.backendConfig.type || '-' },
+                { name: 'Settings', value: JSON.stringify(spec.backendConfig.settings) || '-' },
+              ]
+              : [{ name: 'No backend config', value: '-' }]
           }
         />
       </SectionBox>
-      <SectionBox title="Inputs">
+
+      <SectionBox title="Credential Reference">
         <NameValueTable
           rows={
-            Array.isArray(status.inputs) && status.inputs.length > 0
-              ? status.inputs.map((input: any) => ({
-                  name: input.name,
-                  value: `${input.type}${input.required ? ' (required)' : ''}${
-                    input.sensitive ? ' (sensitive)' : ''
-                  }${input.default !== undefined ? ' (default: ' + input.default + ')' : ''}`,
-                }))
-              : [{ name: 'No inputs', value: '-' }]
+            spec.credentialRef
+              ? [{ name: 'Name', value: spec.credentialRef.name || '-' }]
+              : [{ name: 'No credential reference', value: '-' }]
           }
         />
       </SectionBox>
+
+      <SectionBox title="Modules">
+        <Box sx={{ overflowX: 'auto' }}>
+          <Table>
+            <TableHead>
+              <TableRow>
+                <TableCell>Name</TableCell>
+                <TableCell>Depends On</TableCell>
+                <TableCell>Variables</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {Array.isArray(spec.modules) && spec.modules.length > 0 ? (
+                spec.modules.map((m: any, idx: number) => (
+                  <TableRow key={idx}>
+                    <TableCell>{m.name}</TableCell>
+                    <TableCell>{Array.isArray(m.dependsOn) ? m.dependsOn.join(', ') : '-'}</TableCell>
+                    <TableCell>{m.variables ? JSON.stringify(m.variables) : '-'}</TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={3}>No modules</TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </Box>
+      </SectionBox>
+
       <SectionBox title="Outputs">
         <NameValueTable
           rows={
-            Array.isArray(status.outputs) && status.outputs.length > 0
-              ? status.outputs.map((output: any) => ({
-                  name: output.name,
-                  value: `${output.type}${output.sensitive ? ' (sensitive)' : ''}${
-                    output.description ? ' - ' + output.description : ''
-                  }`,
-                }))
+            status.outputs
+              ? Object.entries(status.outputs).map(([key, value]) => ({ name: key, value: JSON.stringify(value) }))
               : [{ name: 'No outputs', value: '-' }]
           }
         />
       </SectionBox>
+
       <SectionBox title="Resources">
         <NameValueTable
           rows={
             Array.isArray(status.resources) && status.resources.length > 0
-              ? status.resources.map((r: any) => ({
-                  name: r.name,
-                  value: r.type,
-                }))
+              ? status.resources.map((r: any) => ({ name: r.name, value: '-' }))
               : [{ name: 'No resources', value: '-' }]
           }
         />
       </SectionBox>
-      <SectionBox title="Submodules">
-        <NameValueTable
-          rows={
-            Array.isArray(status.submodules) && status.submodules.length > 0
-              ? status.submodules.map((s: any) => ({
-                  name: s.name,
-                  value: s.source,
-                }))
-              : [{ name: 'No submodules', value: '-' }]
-          }
-        />
-      </SectionBox>
-      <SectionBox title="Requirements">
-        <NameValueTable
-          rows={
-            status.requirements
-              ? [
-                  {
-                    name: 'Terraform Version',
-                    value: status.requirements.terraform?.required_version || '-',
-                  },
-                  ...Object.entries(status.requirements.required_providers || {}).map(
-                    ([prov, ver]) => ({ name: `Provider: ${prov}`, value: ver })
-                  ),
-                ]
-              : [{ name: 'No requirements', value: '-' }]
-          }
-        />
-      </SectionBox>
+
       <SectionBox title="Conditions">
         <ConditionsTable resource={item.jsonData} />
       </SectionBox>
@@ -152,4 +139,4 @@ function StackDetailsView() {
   );
 }
 
-export { AstrolabeModule, StackListView, StackDetailsView };
+export { AstrolabeStack, StackListView, StackDetailsView };
