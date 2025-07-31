@@ -1,5 +1,7 @@
 import { KubeObjectInterface } from '@kinvolk/headlamp-plugin/lib/K8s/cluster';
 import { makeCustomResourceClass } from '@kinvolk/headlamp-plugin/lib/K8s/crd';
+import { useParams } from 'react-router-dom';
+import { Box, Tab, Tabs, Typography } from '@mui/material';
 import {
   ConditionsTable,
   Link,
@@ -11,7 +13,6 @@ import {
   StatusLabel,
   Table,
 } from '@kinvolk/headlamp-plugin/lib/CommonComponents';
-
 
 // Define functions that return the Astrolabe Resource Classes
 const astrolabeGroup = 'astrolabe.io';
@@ -26,9 +27,7 @@ const AstrolabeModule = makeCustomResourceClass({
 
 // Define Detail View Wrapper Components
 function StackListView() {
-  return (
-    "Hello Headlamp!"
-  );
+  return 'Hello Headlamp!';
 }
 
 // Define Detail View Wrapper Components
@@ -70,9 +69,9 @@ function StackDetailsView() {
           rows={
             Array.isArray(status.providers) && status.providers.length > 0
               ? status.providers.map((p: any) => ({
-                name: p.name,
-                value: `${p.source || '-'}${p.version ? ' @ ' + p.version : ''}`,
-              }))
+                  name: p.name,
+                  value: `${p.source || '-'}${p.version ? ' @ ' + p.version : ''}`,
+                }))
               : [{ name: 'No providers', value: '-' }]
           }
         />
@@ -82,10 +81,11 @@ function StackDetailsView() {
           rows={
             Array.isArray(status.inputs) && status.inputs.length > 0
               ? status.inputs.map((input: any) => ({
-                name: input.name,
-                value: `${input.type}${input.required ? ' (required)' : ''}${input.sensitive ? ' (sensitive)' : ''
+                  name: input.name,
+                  value: `${input.type}${input.required ? ' (required)' : ''}${
+                    input.sensitive ? ' (sensitive)' : ''
                   }${input.default !== undefined ? ' (default: ' + input.default + ')' : ''}`,
-              }))
+                }))
               : [{ name: 'No inputs', value: '-' }]
           }
         />
@@ -95,10 +95,11 @@ function StackDetailsView() {
           rows={
             Array.isArray(status.outputs) && status.outputs.length > 0
               ? status.outputs.map((output: any) => ({
-                name: output.name,
-                value: `${output.type}${output.sensitive ? ' (sensitive)' : ''}${output.description ? ' - ' + output.description : ''
+                  name: output.name,
+                  value: `${output.type}${output.sensitive ? ' (sensitive)' : ''}${
+                    output.description ? ' - ' + output.description : ''
                   }`,
-              }))
+                }))
               : [{ name: 'No outputs', value: '-' }]
           }
         />
@@ -108,9 +109,9 @@ function StackDetailsView() {
           rows={
             Array.isArray(status.resources) && status.resources.length > 0
               ? status.resources.map((r: any) => ({
-                name: r.name,
-                value: r.type,
-              }))
+                  name: r.name,
+                  value: r.type,
+                }))
               : [{ name: 'No resources', value: '-' }]
           }
         />
@@ -120,9 +121,9 @@ function StackDetailsView() {
           rows={
             Array.isArray(status.submodules) && status.submodules.length > 0
               ? status.submodules.map((s: any) => ({
-                name: s.name,
-                value: s.source,
-              }))
+                  name: s.name,
+                  value: s.source,
+                }))
               : [{ name: 'No submodules', value: '-' }]
           }
         />
@@ -132,14 +133,14 @@ function StackDetailsView() {
           rows={
             status.requirements
               ? [
-                {
-                  name: 'Terraform Version',
-                  value: status.requirements.terraform?.required_version || '-',
-                },
-                ...Object.entries(status.requirements.required_providers || {}).map(
-                  ([prov, ver]) => ({ name: `Provider: ${prov}`, value: ver })
-                ),
-              ]
+                  {
+                    name: 'Terraform Version',
+                    value: status.requirements.terraform?.required_version || '-',
+                  },
+                  ...Object.entries(status.requirements.required_providers || {}).map(
+                    ([prov, ver]) => ({ name: `Provider: ${prov}`, value: ver })
+                  ),
+                ]
               : [{ name: 'No requirements', value: '-' }]
           }
         />
@@ -151,8 +152,4 @@ function StackDetailsView() {
   );
 }
 
-export {
-  AstrolabeModule,
-  StackListView,
-  StackDetailsView,
-};
+export { AstrolabeModule, StackListView, StackDetailsView };
