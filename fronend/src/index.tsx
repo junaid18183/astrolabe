@@ -1,5 +1,5 @@
 import { registerRoute, registerSidebarEntry } from '@kinvolk/headlamp-plugin/lib';
-import { ModuleListView } from './module';
+import { ModuleListView, ModuleDetailsView } from './module';
 // import { StackDetailsView, StackListView } from './stack';
 
 const ASTROLABE_ROOT_SIDEBAR = 'astrolabe';
@@ -59,14 +59,14 @@ registerRoute({
   component: ModuleListView,
 });
 
-// // Module Detail View
-// registerRoute({
-//   path: '/astrolabe/modules/:namespace/:name',
-//   sidebar: ASTROLABE_MODULES_LIST_ROUTE,
-//   parent: ASTROLABE_ROOT_SIDEBAR,
-//   name: ASTROLABE_MODULE_DETAILS_ROUTE,
-//   exact: true,
-//   component: ModuleDetailsView,
-// });
+// Module Detail View
+registerRoute({
+  path: '/astrolabe/modules/:namespace/:name',
+  sidebar: ASTROLABE_MODULES_LIST_ROUTE,
+  parent: ASTROLABE_ROOT_SIDEBAR,
+  name: ASTROLABE_MODULE_DETAILS_ROUTE,
+  exact: true,
+  component: ModuleDetailsView,
+});
 
 console.log('Astrolabe Plugin registered.');
