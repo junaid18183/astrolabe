@@ -1,6 +1,5 @@
 import { useParams } from 'react-router-dom';
 import { Box } from '@mui/material';
-import React from 'react';
 import { AstrolabeModule } from './astrolabe';
 import {
   MainInfoSection,
@@ -18,11 +17,27 @@ function ModuleDetailsView() {
   if (error) {
     return <div>Error loading module: {(error as Error).message}</div>;
   }
+
   if (!item) {
     return <Loader />;
   }
 
   const { spec = {}, status = {}, metadata = {} } = item.jsonData || {};
+
+  const renderTableOrMessage = (
+    title: string,
+    data: any[],
+    columns: any[],
+    noDataMessage: string
+  ) => (
+    <SectionBox title={title}>
+      {Array.isArray(data) && data.length > 0 ? (
+        <Table columns={columns} data={data} />
+      ) : (
+        <NameValueTable rows={[{ name: noDataMessage, value: '-' }]} />
+      )}
+    </SectionBox>
+  );
 
   return (
     <Box
@@ -46,81 +61,63 @@ function ModuleDetailsView() {
           { name: 'Last Synced', value: status.lastSynced || '-' },
         ]}
       />
-      <SectionBox title="Providers">
-        {Array.isArray(status.providers) && status.providers.length > 0 ? (
-          <Table
-            columns={[
-              { header: 'Name', accessorKey: 'name' },
-              { header: 'Version', accessorFn: (p: any) => p.version || '-' },
-            ]}
-            data={status.providers}
-          />
-        ) : (
-          <NameValueTable rows={[{ name: 'No providers', value: '-' }]} />
-        )}
-      </SectionBox>
-      <SectionBox title="Inputs">
-        {Array.isArray(status.inputs) && status.inputs.length > 0 ? (
-          <Table
-            columns={[
-              { header: 'Name', accessorKey: 'name' },
-              { header: 'Description', accessorFn: (input: any) => input.description || '-' },
-              {
-                header: 'Default Value',
-                accessorFn: (input: any) =>
-                  input.default !== undefined ? String(input.default) : '-',
-              },
-              { header: 'Required', accessorFn: (input: any) => (input.required ? 'Yes' : 'No') },
-            ]}
-            data={status.inputs}
-          />
-        ) : (
-          <NameValueTable rows={[{ name: 'No inputs', value: '-' }]} />
-        )}
-      </SectionBox>
-      <SectionBox title="Outputs">
-        {Array.isArray(status.outputs) && status.outputs.length > 0 ? (
-          <Table
-            columns={[
-              { header: 'Name', accessorKey: 'name' },
-              { header: 'Description', accessorFn: (output: any) => output.description || '-' },
-              {
-                header: 'Sensitive',
-                accessorFn: (output: any) => (output.sensitive ? 'Yes' : 'No'),
-              },
-            ]}
-            data={status.outputs}
-          />
-        ) : (
-          <NameValueTable rows={[{ name: 'No outputs', value: '-' }]} />
-        )}
-      </SectionBox>
-      <SectionBox title="Resources">
-        {Array.isArray(status.resources) && status.resources.length > 0 ? (
-          <Table
-            columns={[
-              { header: 'Name', accessorKey: 'name' },
-              { header: 'Type', accessorKey: 'type' },
-            ]}
-            data={status.resources}
-          />
-        ) : (
-          <NameValueTable rows={[{ name: 'No resources', value: '-' }]} />
-        )}
-      </SectionBox>
-      <SectionBox title="Submodules">
-        {Array.isArray(status.submodules) && status.submodules.length > 0 ? (
-          <Table
-            columns={[
-              { header: 'Name', accessorKey: 'name' },
-              { header: 'Source', accessorKey: 'source' },
-            ]}
-            data={status.submodules}
-          />
-        ) : (
-          <NameValueTable rows={[{ name: 'No submodules', value: '-' }]} />
-        )}
-      </SectionBox>
+
+      {renderTableOrMessage(
+        'Providers',
+        status.providers,
+        [
+          { header: 'Name', accessorKey: 'name' },
+          { header: 'Version', accessorFn: (p: any) => p.version || '-' },
+        ],
+        'No providers'
+      )}
+
+      {renderTableOrMessage(
+        'Inputs',
+        status.inputs,
+        [
+          { header: 'Name', accessorKey: 'name' },
+          { header: 'Description', accessorFn: (input: any) => input.description || '-' },
+          {
+            header: 'Default Value',
+            accessorFn: (input: any) => (input.default !== undefined ? String(input.default) : '-'),
+          },
+          { header: 'Required', accessorFn: (input: any) => (input.required ? 'Yes' : 'No') },
+        ],
+        'No inputs'
+      )}
+
+      {renderTableOrMessage(
+        'Outputs',
+        status.outputs,
+        [
+          { header: 'Name', accessorKey: 'name' },
+          { header: 'Description', accessorFn: (output: any) => output.description || '-' },
+          { header: 'Sensitive', accessorFn: (output: any) => (output.sensitive ? 'Yes' : 'No') },
+        ],
+        'No outputs'
+      )}
+
+      {renderTableOrMessage(
+        'Resources',
+        status.resources,
+        [
+          { header: 'Name', accessorKey: 'name' },
+          { header: 'Type', accessorKey: 'type' },
+        ],
+        'No resources'
+      )}
+
+      {renderTableOrMessage(
+        'Submodules',
+        status.submodules,
+        [
+          { header: 'Name', accessorKey: 'name' },
+          { header: 'Source', accessorKey: 'source' },
+        ],
+        'No submodules'
+      )}
+
       <SectionBox title="Requirements">
         <NameValueTable
           rows={
@@ -141,6 +138,7 @@ function ModuleDetailsView() {
           }
         />
       </SectionBox>
+
       <SectionBox title="Conditions">
         <ConditionsTable resource={item.jsonData} />
       </SectionBox>
