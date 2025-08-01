@@ -1,5 +1,8 @@
 import { registerRoute, registerSidebarEntry } from '@kinvolk/headlamp-plugin/lib';
-import { ModuleListView, ModuleDetailsView, ModuleCreateForm } from './module';
+import ModuleCreateForm from './module-create';
+import ModuleDetailsView from './module-details';
+import ModuleListView from './module-list';
+import { AstrolabeModuleListView } from './astrolabe';
 import { StackDetailsView, StackListView } from './stack';
 
 // Register Root Sidebar Entries
@@ -90,8 +93,6 @@ registerRoute({
   component: StackDetailsView,
 });
 
-function AstrolabeModuleListView() {
-  return 'Hello Astrolabe!';
-}
+
 
 console.log('Astrolabe Plugin registered.');
