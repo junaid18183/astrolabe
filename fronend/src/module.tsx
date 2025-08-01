@@ -285,6 +285,9 @@ function ModuleDetailsView() {
 }
 
 function ModuleCreateForm() {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [name, setName] = useState('');
   const [namespace, setNamespace] = useState('default');
   // Fetch namespaces using Headlamp API
@@ -292,9 +295,7 @@ function ModuleCreateForm() {
   const [type, setType] = useState('git');
   const [url, setUrl] = useState('');
   const [version, setVersion] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+  // ...existing code...
 
   const typeOptions = [
     { value: 'git', label: 'Git' },
@@ -304,33 +305,35 @@ function ModuleCreateForm() {
   const apiVersion = 'astrolabe.io/v1';
   const kind = 'Module';
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const [yamlDialogOpen, setYamlDialogOpen] = useState(false);
+  const [yamlValue, setYamlValue] = useState('');
+  // ...existing code...
+
+  const handleReviewYaml = () => {
+    const resource = {
+      apiVersion,
+      kind,
+      metadata: { name, namespace },
+      spec: { source: { type, url, version } },
+    };
+    setYamlValue(JSON.stringify(resource, null, 2));
+    setYamlDialogOpen(true);
+  };
+
+  const handleYamlCreate = async (yamlStr: string) => {
     setLoading(true);
     setError('');
     setSuccess('');
     try {
-      await AstrolabeModule.create({
-        apiVersion,
-        kind,
-        metadata: {
-          name,
-          namespace,
-        },
-        spec: {
-          source: {
-            type,
-            url,
-            version,
-          },
-        },
-      });
+      const resourceObj = JSON.parse(yamlStr);
+      await AstrolabeModule.create(resourceObj);
       setSuccess('Module created successfully!');
       setName('');
       setNamespace('default');
       setType('git');
       setUrl('');
       setVersion('');
+      setYamlDialogOpen(false);
     } catch (err: any) {
       setError(err?.message || 'Failed to create module');
     }
@@ -360,131 +363,178 @@ function ModuleCreateForm() {
           }}
         />
         <CardContent>
-          <form onSubmit={handleSubmit} autoComplete="off">
-            <Grid container spacing={3}>
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  label="apiVersion"
-                  value={apiVersion}
-                  InputProps={{ readOnly: true }}
-                  fullWidth
-                  variant="filled"
-                  disabled
-                />
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  label="kind"
-                  value={kind}
-                  InputProps={{ readOnly: true }}
-                  fullWidth
-                  variant="filled"
-                  disabled
-                />
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  label="Name"
-                  value={name}
-                  onChange={e => setName(e.target.value)}
-                  required
-                  fullWidth
-                  variant="outlined"
-                />
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  label="Namespace"
-                  value={namespace}
-                  onChange={e => setNamespace(e.target.value)}
-                  select
-                  required
-                  fullWidth
-                  variant="outlined"
-                  helperText={nsError ? 'Error loading namespaces' : ''}
-                >
-                  {Array.isArray(namespaces) && namespaces.length > 0 ? (
-                    namespaces.map((ns: any) => {
-                      const nsName = ns.metadata?.name || '-';
-                      return (
-                        <MenuItem key={nsName} value={nsName}>
-                          {nsName}
-                        </MenuItem>
-                      );
-                    })
-                  ) : (
-                    <MenuItem value="default">default</MenuItem>
-                  )}
-                </TextField>
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  label="Type"
-                  value={type}
-                  onChange={e => setType(e.target.value)}
-                  select
-                  required
-                  fullWidth
-                  variant="outlined"
-                >
-                  {typeOptions.map(opt => (
-                    <MenuItem key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </MenuItem>
-                  ))}
-                </TextField>
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  label="URL"
-                  value={url}
-                  onChange={e => setUrl(e.target.value)}
-                  required
-                  fullWidth
-                  variant="outlined"
-                />
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  label="Version"
-                  value={version}
-                  onChange={e => setVersion(e.target.value)}
-                  fullWidth
-                  variant="outlined"
-                />
-              </Grid>
+          <Grid container spacing={3}>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                label="apiVersion"
+                value={apiVersion}
+                InputProps={{ readOnly: true }}
+                fullWidth
+                variant="filled"
+                disabled
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                label="kind"
+                value={kind}
+                InputProps={{ readOnly: true }}
+                fullWidth
+                variant="filled"
+                disabled
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                label="Name"
+                value={name}
+                onChange={e => setName(e.target.value)}
+                required
+                fullWidth
+                variant="outlined"
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                label="Namespace"
+                value={namespace}
+                onChange={e => setNamespace(e.target.value)}
+                select
+                required
+                fullWidth
+                variant="outlined"
+                helperText={nsError ? 'Error loading namespaces' : ''}
+              >
+                {Array.isArray(namespaces) && namespaces.length > 0 ? (
+                  namespaces.map((ns: any) => {
+                    const nsName = ns.metadata?.name || '-';
+                    return (
+                      <MenuItem key={nsName} value={nsName}>
+                        {nsName}
+                      </MenuItem>
+                    );
+                  })
+                ) : (
+                  <MenuItem value="default">default</MenuItem>
+                )}
+              </TextField>
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                label="Type"
+                value={type}
+                onChange={e => setType(e.target.value)}
+                select
+                required
+                fullWidth
+                variant="outlined"
+              >
+                {typeOptions.map(opt => (
+                  <MenuItem key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </MenuItem>
+                ))}
+              </TextField>
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                label="URL"
+                value={url}
+                onChange={e => setUrl(e.target.value)}
+                required
+                fullWidth
+                variant="outlined"
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                label="Version"
+                value={version}
+                onChange={e => setVersion(e.target.value)}
+                fullWidth
+                variant="outlined"
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <Button
+                variant="contained"
+                color="primary"
+                size="large"
+                fullWidth
+                sx={{ py: 1.5, fontWeight: 600, borderRadius: 2, boxShadow: 2 }}
+                onClick={handleReviewYaml}
+              >
+                Review YAML & Create
+              </Button>
+            </Grid>
+            {error && (
               <Grid item xs={12}>
+                <Typography color="error" sx={{ mt: 1 }}>
+                  {error}
+                </Typography>
+              </Grid>
+            )}
+            {success && (
+              <Grid item xs={12}>
+                <Typography color="success.main" sx={{ mt: 1 }}>
+                  {success}
+                </Typography>
+              </Grid>
+            )}
+          </Grid>
+        </CardContent>
+      </Card>
+      {yamlDialogOpen && (
+        <Box
+          sx={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100vw',
+            height: '100vh',
+            bgcolor: 'rgba(0,0,0,0.5)',
+            zIndex: 1300,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <Card sx={{ maxWidth: 700, width: '100%', p: 2 }}>
+            <CardHeader title={<Typography variant="h6">Review & Create Module YAML</Typography>} />
+            <CardContent>
+              <TextField
+                label="Module YAML (JSON)"
+                value={yamlValue}
+                onChange={e => setYamlValue(e.target.value)}
+                multiline
+                minRows={12}
+                maxRows={24}
+                fullWidth
+                variant="outlined"
+                sx={{ fontFamily: 'monospace', mb: 2 }}
+              />
+              <Box sx={{ display: 'flex', gap: 2 }}>
                 <Button
-                  type="submit"
                   variant="contained"
                   color="primary"
-                  size="large"
-                  fullWidth
+                  onClick={() => handleYamlCreate(yamlValue)}
                   disabled={loading}
-                  sx={{ py: 1.5, fontWeight: 600, borderRadius: 2, boxShadow: 2 }}
-                  startIcon={loading ? <CircularProgress size={22} color="inherit" /> : null}
                 >
                   {loading ? 'Creating...' : 'Create Module'}
                 </Button>
-              </Grid>
+                <Button variant="outlined" onClick={() => setYamlDialogOpen(false)}>
+                  Cancel
+                </Button>
+              </Box>
               {error && (
-                <Grid item xs={12}>
-                  <Typography color="error" sx={{ mt: 1 }}>
-                    {error}
-                  </Typography>
-                </Grid>
+                <Typography color="error" sx={{ mt: 2 }}>
+                  {error}
+                </Typography>
               )}
-              {success && (
-                <Grid item xs={12}>
-                  <Typography color="success.main" sx={{ mt: 1 }}>
-                    {success}
-                  </Typography>
-                </Grid>
-              )}
-            </Grid>
-          </form>
-        </CardContent>
-      </Card>
+            </CardContent>
+          </Card>
+        </Box>
+      )}
     </SectionBox>
   );
 }
