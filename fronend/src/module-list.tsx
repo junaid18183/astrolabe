@@ -41,7 +41,7 @@ function ModuleListView() {
     {
       header: 'Name',
       accessorFn: (module: KubeObjectInterface) => {
-        const metadata = getColumnData(module, 'metadata', {});
+        const metadata = getColumnData(module, 'metadata', '-');
         const name = module.getName ? module.getName() : metadata.name || '-';
         const namespace = module.getNamespace ? module.getNamespace() : metadata.namespace || '-';
         const clusterName = module._clusterName || '-';
@@ -90,7 +90,7 @@ function ModuleListView() {
     {
       header: 'Actions',
       accessorFn: (module: KubeObjectInterface) => {
-        const metadata = getColumnData(module, 'metadata', {});
+        const metadata = getColumnData(module, 'metadata', '-');
         const name = module.getName ? module.getName() : metadata.name || '-';
         const namespace = module.getNamespace ? module.getNamespace() : metadata.namespace || '-';
         const clusterName = module._clusterName || '-';
