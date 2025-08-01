@@ -1,4 +1,5 @@
 import { KubeObjectInterface } from '@kinvolk/headlamp-plugin/lib/K8s/cluster';
+import Namespace from '@kinvolk/headlamp-plugin/lib/K8s/namespace';
 import { makeCustomResourceClass } from '@kinvolk/headlamp-plugin/lib/K8s/crd';
 import { useParams } from 'react-router-dom';
 import { Box } from '@mui/material';
@@ -286,6 +287,8 @@ function ModuleDetailsView() {
 function ModuleCreateForm() {
   const [name, setName] = useState('');
   const [namespace, setNamespace] = useState('default');
+  // Fetch namespaces using Headlamp API
+  const [namespaces, nsError] = Namespace.useList();
   const [type, setType] = useState('git');
   const [url, setUrl] = useState('');
   const [version, setVersion] = useState('');
@@ -394,9 +397,25 @@ function ModuleCreateForm() {
                   label="Namespace"
                   value={namespace}
                   onChange={e => setNamespace(e.target.value)}
+                  select
+                  required
                   fullWidth
                   variant="outlined"
-                />
+                  helperText={nsError ? 'Error loading namespaces' : ''}
+                >
+                  {Array.isArray(namespaces) && namespaces.length > 0 ? (
+                    namespaces.map((ns: any) => {
+                      const nsName = ns.metadata?.name || '-';
+                      return (
+                        <MenuItem key={nsName} value={nsName}>
+                          {nsName}
+                        </MenuItem>
+                      );
+                    })
+                  ) : (
+                    <MenuItem value="default">default</MenuItem>
+                  )}
+                </TextField>
               </Grid>
               <Grid item xs={12} sm={6}>
                 <TextField
