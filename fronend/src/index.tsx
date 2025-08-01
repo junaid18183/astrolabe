@@ -1,5 +1,5 @@
 import { registerRoute, registerSidebarEntry } from '@kinvolk/headlamp-plugin/lib';
-import { ModuleListView, ModuleDetailsView, AstrolabeModule } from './module';
+import { ModuleListView, ModuleDetailsView, ModuleCreateForm } from './module';
 import { StackDetailsView, StackListView } from './stack';
 
 // Register Root Sidebar Entries
@@ -17,6 +17,13 @@ registerSidebarEntry({
   name: 'modules',
   label: 'Modules',
   url: '/astrolabe/modules',
+});
+
+registerSidebarEntry({
+  parent: 'astrolabe',
+  name: 'modules-create',
+  label: 'CreateModules',
+  url: '/astrolabe/create-modules',
 });
 
 // Register Stacks Sidebar Entry
@@ -43,6 +50,15 @@ registerRoute({
   name: 'modules',
   exact: true,
   component: ModuleListView,
+});
+
+// Module Create  View
+registerRoute({
+  path: '/astrolabe/create-modules',
+  sidebar: 'modules',
+  name: 'create-modules',
+  exact: true,
+  component: ModuleCreateForm,
 });
 
 // Module Detail View
