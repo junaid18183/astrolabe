@@ -7,6 +7,8 @@ import {
   MainInfoSection,
   NameValueTable,
   SectionBox,
+  Link,
+  StatusLabel,
   Table,
 } from '@kinvolk/headlamp-plugin/lib/CommonComponents';
 
@@ -46,14 +48,10 @@ function StackListView() {
                 ? stack.getNamespace()
                 : metadata?.namespace || '-';
               const clusterName = stack._clusterName || '-';
-              const linkPath =
-                name !== '-' && namespace !== '-' && clusterName !== '-'
-                  ? `/c/${clusterName}/astrolabe/stacks/${namespace}/${name}`
-                  : undefined;
-              return linkPath ? (
-                <a href={linkPath} className="text-blue-600 hover:underline">
+              return name !== '-' && namespace !== '-' ? (
+                <Link routeName="stack" params={{ namespace, name }} tooltip={name}>
                   {name}
-                </a>
+                </Link>
               ) : (
                 <span>{name}</span>
               );
@@ -79,14 +77,9 @@ function StackListView() {
             accessorFn: (stack: KubeObjectInterface) => {
               const ready = stack.jsonData?.status?.ready === true;
               return (
-                <span className="inline-flex items-center">
-                  <span
-                    className={`h-3 w-3 rounded-full mr-2 ${
-                      ready ? 'bg-green-500' : 'bg-gray-400'
-                    }`}
-                  ></span>
+                <StatusLabel status={ready ? 'success' : 'warning'}>
                   {ready ? 'Ready' : 'Not Ready'}
-                </span>
+                </StatusLabel>
               );
             },
           },
@@ -114,17 +107,12 @@ function StackListView() {
                 ? stack.getNamespace()
                 : metadata?.namespace || '-';
               const clusterName = stack._clusterName || '-';
-              const linkPath =
-                name !== '-' && namespace !== '-' && clusterName !== '-'
-                  ? `/c/${clusterName}/astrolabe/stacks/${namespace}/${name}`
-                  : undefined;
-              return linkPath ? (
-                <a
-                  href={linkPath}
-                  className="px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
-                >
-                  View
-                </a>
+              return name !== '-' && namespace !== '-' ? (
+                <Link routeName="stacks" params={{ namespace, name }} tooltip="View stack">
+                  <span className="px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600">
+                    View
+                  </span>
+                </Link>
               ) : (
                 <span>-</span>
               );

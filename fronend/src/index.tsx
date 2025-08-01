@@ -69,7 +69,7 @@ registerRoute({
   path: '/astrolabe/stacks/:namespace/:name',
   sidebar: 'stacks',
   parent: 'astrolabe/stacks',
-  name: 'stacks',
+  name: 'stack',
   exact: true,
   component: StackDetailsView,
 });
