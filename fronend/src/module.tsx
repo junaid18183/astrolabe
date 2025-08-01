@@ -2,6 +2,18 @@ import { KubeObjectInterface } from '@kinvolk/headlamp-plugin/lib/K8s/cluster';
 import { makeCustomResourceClass } from '@kinvolk/headlamp-plugin/lib/K8s/crd';
 import { useParams } from 'react-router-dom';
 import { Box } from '@mui/material';
+import React, { useState } from 'react';
+import {
+  Card,
+  CardHeader,
+  CardContent,
+  Grid,
+  Typography,
+  TextField,
+  MenuItem,
+  Button,
+  CircularProgress,
+} from '@mui/material';
 import {
   ConditionsTable,
   Link,
@@ -270,19 +282,6 @@ function ModuleDetailsView() {
     </Box>
   );
 }
-
-import React, { useState } from 'react';
-import {
-  Card,
-  CardHeader,
-  CardContent,
-  Grid,
-  Typography,
-  TextField,
-  MenuItem,
-  Button,
-  CircularProgress,
-} from '@mui/material';
 
 function ModuleCreateForm() {
   const [name, setName] = useState('');
