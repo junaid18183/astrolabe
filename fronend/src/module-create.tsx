@@ -12,7 +12,7 @@ import {
   DialogTitle,
 } from '@mui/material';
 import { KubeObjectInterface, KubeObject } from '@kinvolk/headlamp-plugin/lib/K8s/cluster';
-import { EditorDialog, EditButton } from '@kinvolk/headlamp-plugin/lib/CommonComponents';
+import { EditorDialog, EditButton, CreateButton } from '@kinvolk/headlamp-plugin/lib/CommonComponents';
 import SectionBox from '@kinvolk/headlamp-plugin/lib/CommonComponents/SectionBox';
 
 export default function ModuleCreateForm() {
@@ -198,26 +198,18 @@ export default function ModuleCreateForm() {
                   variant="outlined"
                 />
               </Grid>
-              {error && (
-                <Grid item xs={12}>
-                  <Typography color="error" sx={{ mt: 1 }}>
-                    {error}
-                  </Typography>
-                </Grid>
-              )}
-              {success && (
-                <Grid item xs={12}>
-                  <Typography color="success.main" sx={{ mt: 1 }}>
-                    {success}
-                  </Typography>
-                </Grid>
-              )}
             </Grid>
             <Grid>
               <EditButton
+                buttonStyle="action"
                 item={new KubeObject(moduleResource)}
                 afterConfirm={() => setOpenEditor(true)}
               />
+            </Grid>
+            <Grid>
+              <CreateButton
+                isNarrow={true}>
+              </CreateButton>
             </Grid>
           </CardContent>
         </Card>
