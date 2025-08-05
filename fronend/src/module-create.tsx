@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { AstrolabeModule } from './astrolabe';
 import {
   Card,
   CardHeader,
@@ -12,16 +13,21 @@ import {
   DialogTitle,
 } from '@mui/material';
 import { KubeObjectInterface, KubeObject } from '@kinvolk/headlamp-plugin/lib/K8s/cluster';
-import { EditorDialog, EditButton, CreateButton } from '@kinvolk/headlamp-plugin/lib/CommonComponents';
-import SectionBox from '@kinvolk/headlamp-plugin/lib/CommonComponents/SectionBox';
+import {
+  EditorDialog,
+  EditButton,
+  CreateButton,
+  CreateResourceButton,
+  SectionBox,
+} from '@kinvolk/headlamp-plugin/lib/CommonComponents';
 
 export default function ModuleCreateForm() {
   const [apiVersion] = useState('astrolabe.io/v1');
   const [kind] = useState('Module');
-  const [name, setName] = useState('test-eks-module');
+  const [name, setName] = useState('testeksmodule');
   const [namespace, setNamespace] = useState('default');
   const [type, setType] = useState('git');
-  const [url, setUrl] = useState('https://github.com/terraform-aws-modules/terraform-aws-eks.git');
+  const [url, setUrl] = useState('https://github.com/terraformawsmodules/terraformawseks.git');
   const [version, setVersion] = useState('v20.37.2');
   const [namespaces, setNamespaces] = useState<any[]>([]);
   const [nsError, setNsError] = useState(false);
@@ -200,34 +206,55 @@ export default function ModuleCreateForm() {
               </Grid>
             </Grid>
             <Grid>
+              <Button
+                variant="outlined"
+                color="primary"
+                onClick={() => {
+                  console.log('Edit Module YAML button clicked');
+                  setOpenEditor(true);
+                }}
+                sx={{ mt: 2, borderRadius: 2, textTransform: 'none', fontWeight: 600 }}
+              >
+                Edit Module YAML
+              </Button>
+              <Dialog
+                open={openEditor}
+                onClose={() => setOpenEditor(false)}
+                fullWidth
+                maxWidth="md"
+              >
+                <DialogTitle>Create Module Resource</DialogTitle>
+                <EditorDialog
+                  item={new KubeObject(moduleResource)}
+                  setOpen={setOpenEditor}
+                  onClose={() => setOpenEditor(false)}
+                  onSave={handleSave}
+                  saveLabel="Apply"
+                  errorMessage={errorMessage}
+                  onEditorChanged={() => setErrorMessage(undefined)}
+                  title="Module YAML Editor"
+                />
+              </Dialog>
+            </Grid>
+            {/* <Grid>
+              <CreateButton isNarrow={false}></CreateButton>
+            </Grid> */}
+            {/* <Grid>
+              <CreateResourceButton
+                resourceClass={AstrolabeModule}
+                resourceName="junedtestmodule"
+              />
+            </Grid> */}
+            {/* <Grid>
               <EditButton
                 buttonStyle="action"
                 item={new KubeObject(moduleResource)}
                 afterConfirm={() => setOpenEditor(true)}
               />
-            </Grid>
-            <Grid>
-              <CreateButton
-                isNarrow={true}>
-              </CreateButton>
-            </Grid>
+            </Grid> */}
           </CardContent>
         </Card>
       </SectionBox>
-
-      <Dialog open={openEditor} onClose={() => setOpenEditor(false)} fullWidth maxWidth="md">
-        <DialogTitle>Create Module Resource</DialogTitle>
-        <EditorDialog
-          item={new KubeObject(moduleResource)}
-          setOpen={setOpenEditor}
-          onClose={() => setOpenEditor(false)}
-          onSave={handleSave}
-          saveLabel="Apply"
-          errorMessage={errorMessage}
-          onEditorChanged={() => setErrorMessage(undefined)}
-          title="Module YAML Editor"
-        />
-      </Dialog>
     </>
   );
 }
