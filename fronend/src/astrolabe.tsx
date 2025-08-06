@@ -11,8 +11,15 @@ const AstrolabeModule = makeCustomResourceClass({
   pluralName: 'modules',
 });
 
+const AstrolabeStack = makeCustomResourceClass({
+  apiInfo: [{ group: astrolabeGroup, version: astrolabeVersion }],
+  isNamespaced: true,
+  singularName: 'Stack',
+  pluralName: 'stacks',
+});
+
 function AstrolabeModuleListView() {
   return 'Hello Astrolabe!';
 }
 
-export { AstrolabeModule, AstrolabeModuleListView };
+export { AstrolabeModule, AstrolabeStack, AstrolabeModuleListView };

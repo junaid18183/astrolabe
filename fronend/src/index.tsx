@@ -3,7 +3,8 @@ import ModuleCreateForm from './module-create';
 import ModuleDetailsView from './module-details';
 import ModuleListView from './module-list';
 import { AstrolabeModuleListView } from './astrolabe';
-import { StackDetailsView, StackListView } from './stack';
+import StackDetailsView from './stack-details';
+import StackListView from './stack-list';
 
 // Register sidebar and routes
 const sidebarEntries = [
