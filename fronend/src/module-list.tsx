@@ -6,6 +6,8 @@ import {
   Link,
   Loader,
   StatusLabel,
+  ActionButton,
+  CreateResourceButton,
 } from '@kinvolk/headlamp-plugin/lib/CommonComponents';
 
 function ModuleListView() {
@@ -106,7 +108,24 @@ function ModuleListView() {
   ];
 
   return (
-    <SectionBox title="Modules">
+    <SectionBox
+      title="Modules"
+      description="List of Astrolabe modules"
+      headerProps={{
+        titleSideActions: [
+          <ActionButton
+            key="create-modules"
+            description="Create modules"
+            icon="mdi:plus"
+            onClick={() => {
+              // Use the first module's cluster name, or fallback to '-'
+              const clusterName = modules?.[0]?._clusterName || '-';
+              window.location.href = `/c/${clusterName}/astrolabe/create-modules`;
+            }}
+          />,
+        ],
+      }}
+    >
       <Table columns={columns} data={modules} />
     </SectionBox>
   );

@@ -1,0 +1,207 @@
+{
+  "description": "Module is the Schema for the modules API.",
+  "properties": {
+    "apiVersion": {
+      "description": "APIVersion defines the versioned schema of this representation of an object.\nServers should convert recognized schemas to the latest internal value, and\nmay reject unrecognized values.\nMore info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
+      "type": "string"
+    },
+    "kind": {
+      "description": "Kind is a string value representing the REST resource this object represents.\nServers may infer this from the endpoint the client submits requests to.\nCannot be updated.\nIn CamelCase.\nMore info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
+      "type": "string"
+    },
+    "metadata": {
+      "type": "object"
+    },
+    "spec": {
+      "description": "ModuleSpec defines the desired state of Module.",
+      "properties": {
+        "source": {
+          "properties": {
+            "path": {
+              "type": "string"
+            },
+            "type": {
+              "enum": ["git", "http"],
+              "type": "string"
+            },
+            "url": {
+              "type": "string"
+            },
+            "version": {
+              "type": "string"
+            }
+          },
+          "required": ["type", "url"],
+          "type": "object"
+        }
+      },
+      "required": ["source"],
+      "type": "object"
+    },
+    "status": {
+      "description": "ModuleStatus defines the observed state of Module.",
+      "properties": {
+        "conditions": {
+          "items": {
+            "properties": {
+              "lastTransitionTime": {
+                "format": "date-time",
+                "type": "string"
+              },
+              "message": {
+                "type": "string"
+              },
+              "reason": {
+                "type": "string"
+              },
+              "status": {
+                "type": "string"
+              },
+              "type": {
+                "type": "string"
+              }
+            },
+            "required": ["lastTransitionTime", "status", "type"],
+            "type": "object"
+          },
+          "type": "array"
+        },
+        "description": {
+          "type": "string"
+        },
+        "inputs": {
+          "items": {
+            "properties": {
+              "default": {
+                "x-kubernetes-preserve-unknown-fields": true
+              },
+              "description": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "required": {
+                "type": "boolean"
+              },
+              "sensitive": {
+                "type": "boolean"
+              },
+              "type": {
+                "type": "string"
+              }
+            },
+            "required": ["name", "required", "sensitive", "type"],
+            "type": "object"
+          },
+          "type": "array"
+        },
+        "lastSynced": {
+          "format": "date-time",
+          "type": "string"
+        },
+        "outputs": {
+          "items": {
+            "properties": {
+              "description": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "sensitive": {
+                "type": "boolean"
+              },
+              "type": {
+                "type": "string"
+              }
+            },
+            "required": ["name", "sensitive", "type"],
+            "type": "object"
+          },
+          "type": "array"
+        },
+        "providers": {
+          "items": {
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "source": {
+                "type": "string"
+              },
+              "version": {
+                "type": "string"
+              }
+            },
+            "required": ["name"],
+            "type": "object"
+          },
+          "type": "array"
+        },
+        "requirements": {
+          "properties": {
+            "required_providers": {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            "terraform": {
+              "properties": {
+                "required_version": {
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            }
+          },
+          "required": ["required_providers", "terraform"],
+          "type": "object"
+        },
+        "resources": {
+          "items": {
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "type": {
+                "type": "string"
+              }
+            },
+            "required": ["name", "type"],
+            "type": "object"
+          },
+          "type": "array"
+        },
+        "submodules": {
+          "items": {
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "source": {
+                "type": "string"
+              }
+            },
+            "required": ["name", "source"],
+            "type": "object"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "conditions",
+        "inputs",
+        "lastSynced",
+        "outputs",
+        "providers",
+        "requirements",
+        "resources",
+        "submodules"
+      ],
+      "type": "object"
+    }
+  },
+  "type": "object"
+}

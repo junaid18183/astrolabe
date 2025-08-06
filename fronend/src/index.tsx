@@ -20,12 +20,12 @@ const sidebarEntries = [
     label: 'Modules',
     url: '/astrolabe/modules',
   },
-  {
-    parent: 'astrolabe',
-    name: 'modules-create',
-    label: 'CreateModules',
-    url: '/astrolabe/create-modules',
-  },
+  // {
+  //   parent: 'astrolabe',
+  //   name: 'modules-create',
+  //   label: 'CreateModules',
+  //   url: '/astrolabe/create-modules',
+  // },
   {
     parent: 'astrolabe',
     name: 'stacks',
