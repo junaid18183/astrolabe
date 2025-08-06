@@ -1,3 +1,12 @@
+apiVersion: astrolabe.io/v1
+kind: Module
+metadata:
+  name: hello
+spec:
+  source:
+    type: git
+    url: "https://github.com/joatmon08/terraform-random-hello.git"
+    version: "v6.0.0"
 ---
 apiVersion: astrolabe.io/v1
 kind: Stack
@@ -16,13 +25,4 @@ spec:
           hello: "Hello, Astrolabe!"
           second_hello: "Hi from Juned!"
 ---
-apiVersion: astrolabe.io/v1
-kind: Module
-metadata:
-  name: hello
-spec:
-  source:
-    type: git
-    url: "https://github.com/joatmon08/terraform-random-hello.git"
-    version: "v6.0.0"
----
+

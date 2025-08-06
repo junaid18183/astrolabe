@@ -7,65 +7,52 @@ import {
   Loader,
   StatusLabel,
   ActionButton,
-  CreateResourceButton,
 } from '@kinvolk/headlamp-plugin/lib/CommonComponents';
 
 function ModuleListView() {
   const [modules, error] = AstrolabeModule.useList();
 
   if (error) {
+    // @ts-ignore Error type is not well defined
     return <div>Error loading modules: {(error as Error).message}</div>;
   }
-
   if (!modules) {
     return <Loader />;
   }
-
-  const getColumnData = (module: KubeObjectInterface, key: string, fallback: string = '-') => {
-    return module.jsonData?.[key] || fallback;
-  };
-
-  const renderLinkOrName = (
-    module: KubeObjectInterface,
-    clusterName: string,
-    name: string,
-    namespace: string
-  ) =>
-    name !== '-' && namespace !== '-' ? (
-      <Link routeName="module" params={{ namespace, name }} tooltip={name}>
-        {name}
-      </Link>
-    ) : (
-      <span>{name}</span>
-    );
 
   const columns = [
     {
       header: 'Name',
       accessorFn: (module: KubeObjectInterface) => {
-        const metadata = getColumnData(module, 'metadata', '-');
-        const name = module.getName ? module.getName() : metadata.name || '-';
-        const namespace = module.getNamespace ? module.getNamespace() : metadata.namespace || '-';
+        const { metadata = {} } = module.jsonData || {};
+        const name = module.getName ? module.getName() : metadata?.name || '-';
+        const namespace = module.getNamespace ? module.getNamespace() : metadata?.namespace || '-';
         const clusterName = module._clusterName || '-';
-        return renderLinkOrName(module, clusterName, name, namespace);
+        return name !== '-' && namespace !== '-' ? (
+          <Link routeName="module" params={{ namespace, name }} tooltip={name}>
+            {name}
+          </Link>
+        ) : (
+          <span>{name}</span>
+        );
       },
     },
     {
       header: 'Namespace',
       accessorFn: (module: KubeObjectInterface) =>
-        module.getNamespace ? module.getNamespace() : getColumnData(module, 'metadata.namespace'),
+        module.getNamespace ? module.getNamespace() : module.jsonData?.metadata?.namespace || '-',
     },
     {
       header: 'Source Type',
-      accessorFn: (module: KubeObjectInterface) => getColumnData(module, 'spec.source.type'),
+      accessorFn: (module: KubeObjectInterface) => module.jsonData?.spec?.source?.type || '-',
     },
     {
       header: 'Source URL',
-      accessorFn: (module: KubeObjectInterface) => getColumnData(module, 'spec.source.url'),
+      accessorFn: (module: KubeObjectInterface) => module.jsonData?.spec?.source?.url || '-',
     },
     {
       header: 'Version',
-      accessorFn: (module: KubeObjectInterface) => getColumnData(module, 'spec.source.version'),
+      accessorFn: (module: KubeObjectInterface) => module.jsonData?.spec?.source?.version || '-',
     },
     {
       header: 'Status',
@@ -83,7 +70,7 @@ function ModuleListView() {
     },
     {
       header: 'Last Synced',
-      accessorFn: (module: KubeObjectInterface) => getColumnData(module, 'status.lastSynced'),
+      accessorFn: (module: KubeObjectInterface) => module.jsonData?.status?.lastSynced || '-',
     },
     {
       header: 'Cluster',
@@ -92,9 +79,9 @@ function ModuleListView() {
     {
       header: 'Actions',
       accessorFn: (module: KubeObjectInterface) => {
-        const metadata = getColumnData(module, 'metadata', '-');
-        const name = module.getName ? module.getName() : metadata.name || '-';
-        const namespace = module.getNamespace ? module.getNamespace() : metadata.namespace || '-';
+        const { metadata = {} } = module.jsonData || {};
+        const name = module.getName ? module.getName() : metadata?.name || '-';
+        const namespace = module.getNamespace ? module.getNamespace() : metadata?.namespace || '-';
         const clusterName = module._clusterName || '-';
         return name !== '-' && namespace !== '-' ? (
           <Link routeName="module" params={{ namespace, name }} tooltip="View module">
