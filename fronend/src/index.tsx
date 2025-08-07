@@ -48,7 +48,7 @@ const routes = [
   {
     path: '/astrolabe/create-module',
     sidebar: 'modules',
-    name: 'create-modules',
+    name: 'create-module',
     exact: true,
     component: ModuleCreateForm,
   },

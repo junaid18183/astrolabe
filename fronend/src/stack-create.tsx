@@ -37,7 +37,6 @@ function StackCreateForm() {
   const apiVersion = 'astrolabe.io/v1';
   const kind = 'Stack';
 
-  // Build the resource object dynamically for live YAML preview
   const resource = {
     apiVersion,
     kind,
@@ -133,46 +132,106 @@ function StackCreateForm() {
             >
               <CardContent>
                 <Grid container spacing={3}>
-                  {/* ...existing code... */}
                   <Grid item xs={12}>
                     <Typography variant="h5" sx={{ fontWeight: 700, mb: 2 }}>
                       Create New Stack
                     </Typography>
                   </Grid>
-                  {/* ...existing code for form fields and modules... */}
                   <Grid item xs={12} sm={6}>
                     <TextField
-                      label="apiVersion"
-                      value={apiVersion}
-                      InputProps={{ readOnly: true }}
+                      label="Name"
+                      value={name}
+                      onChange={e => setName(e.target.value)}
+                      required
                       fullWidth
-                      variant="filled"
-                      disabled
+                      variant="outlined"
                     />
                   </Grid>
                   <Grid item xs={12} sm={6}>
                     <TextField
-                      label="kind"
-                      value={kind}
-                      InputProps={{ readOnly: true }}
+                      label="Namespace"
+                      value={namespace}
+                      onChange={e => {
+                        setNamespace(e.target.value);
+                        setSecret(undefined); // Reset credentialRef when namespace changes
+                      }}
+                      required
                       fullWidth
-                      variant="filled"
-                      disabled
+                      variant="outlined"
+                      select
+                      helperText={nsError ? 'Error loading namespaces' : ''}
+                    >
+                      {Array.isArray(namespaces) && namespaces.length > 0 ? (
+                        namespaces.map((ns: any) => (
+                          <MenuItem key={ns.metadata?.name} value={ns.metadata?.name}>
+                            {ns.metadata?.name}
+                          </MenuItem>
+                        ))
+                      ) : (
+                        <MenuItem value="">No namespaces found</MenuItem>
+                      )}
+                    </TextField>
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      label='Credential Reference'
+                      value={credentialRef || ''}
+                      onChange={e => setSecret(e.target.value)}
+                      required
+                      fullWidth
+                      variant='outlined'
+                      select
+                      helperText={secretError ? 'Error loading secrets' : ''}
+                    >
+                      <MenuItem value=''>
+                        <em>None</em>
+                      </MenuItem>
+                      {Array.isArray(secrets) && secrets.filter((s: any) => s.metadata?.namespace === namespace).length > 0 ? (
+                        secrets
+                          .filter((s: any) => s.metadata?.namespace === namespace)
+                          .map((s: any) => (
+                            <MenuItem key={s.metadata?.name} value={s.metadata?.name}>
+                              {s.metadata?.name}
+                            </MenuItem>
+                          ))
+                      ) : (
+                        <MenuItem value=''>No secrets found in this namespace</MenuItem>
+                      )}
+                    </TextField>
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      label="Backend Type"
+                      value={backendType}
+                      onChange={e => setBackendType(e.target.value)}
+                      required
+                      fullWidth
+                      variant="outlined"
+                      select
+                    >
+                      <MenuItem value="local">Local</MenuItem>
+                      <MenuItem value="remote">Remote</MenuItem>
+                    </TextField>
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      label="Backend Settings"
+                      value={backendSettings}
+                      onChange={e => setBackendSettings(e.target.value)}
+                      fullWidth
+                      variant="outlined"
+                      multiline
+                      rows={2}
                     />
                   </Grid>
-                  {/* ...existing code for rest of form... */}
-                  {/* ...existing code for modules... */}
                   <Grid item xs={12}>
                     <Typography sx={{ fontWeight: 700, mb: 1 }}>Modules</Typography>
-                    {/* ...existing code for modules map... */}
                     {modules.map((mod, idx) => (
                       <Box
                         key={idx}
                         sx={{ mb: 2, p: 2, border: '1px solid #eee', borderRadius: 2 }}
                       >
-                        {/* ...existing code for module fields... */}
                         <Grid container spacing={2}>
-                          {/* ...existing code for module name, variables, remove button... */}
                           <Grid item xs={12} sm={3}>
                             <TextField
                               label="Module Name"
@@ -239,8 +298,8 @@ function StackCreateForm() {
                                               input.type === 'number'
                                                 ? 'number'
                                                 : input.type === 'boolean'
-                                                ? 'text'
-                                                : 'text'
+                                                  ? 'text'
+                                                  : 'text'
                                             }
                                             error={
                                               !!mod.variables[input.name] &&
@@ -251,10 +310,10 @@ function StackCreateForm() {
                                             }
                                             helperText={
                                               !!mod.variables[input.name] &&
-                                              !validateVariableValue(
-                                                input.type,
-                                                mod.variables[input.name]
-                                              )
+                                                !validateVariableValue(
+                                                  input.type,
+                                                  mod.variables[input.name]
+                                                )
                                                 ? `Invalid value for type ${input.type}`
                                                 : ''
                                             }
