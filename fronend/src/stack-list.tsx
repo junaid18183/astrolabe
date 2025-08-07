@@ -23,10 +23,13 @@ function StackListView() {
   const columns = [
     {
       header: 'Name',
-      accessorFn: (stack: KubeObjectInterface) => {
-        const { metadata = {} } = stack.jsonData || {};
-        const name = stack.getName ? stack.getName() : metadata?.name || '-';
-        const namespace = stack.getNamespace ? stack.getNamespace() : metadata?.namespace || '-';
+      accessor: 'metadata.name',
+      Cell: ({ row }: { row: { original: KubeObjectInterface } }) => {
+        const stack = row.original;
+        const name = stack.getName ? stack.getName() : stack.jsonData?.metadata?.name || '-';
+        const namespace = stack.getNamespace
+          ? stack.getNamespace()
+          : stack.jsonData?.metadata?.namespace || '-';
         return name !== '-' && namespace !== '-' ? (
           <Link routeName="stack" params={{ namespace, name }} tooltip={name}>
             {name}
@@ -38,23 +41,63 @@ function StackListView() {
     },
     {
       header: 'Namespace',
-      accessorFn: (stack: KubeObjectInterface) =>
-        stack.getNamespace ? stack.getNamespace() : stack.jsonData?.metadata?.namespace || '-',
+      accessor: 'metadata.namespace',
+      Cell: ({ row }: { row: { original: KubeObjectInterface } }) =>
+        row.original.getNamespace
+          ? row.original.getNamespace()
+          : row.original.jsonData?.metadata?.namespace || '-',
+    },
+    {
+      header: 'Phase',
+      accessor: 'status.phase',
+      Cell: ({ row }: { row: { original: KubeObjectInterface } }) =>
+        row.original.jsonData?.status?.phase || '-',
+    },
+    {
+      header: 'Applied',
+      accessor: 'status.applied',
+      Cell: ({ row }: { row: { original: KubeObjectInterface } }) =>
+        row.original.jsonData?.status?.applied || '-',
     },
     {
       header: 'Status',
-      accessorFn: (stack: KubeObjectInterface) => stack.jsonData?.status?.status || '-',
+      accessor: 'status.status',
+      Cell: ({ row }: { row: { original: KubeObjectInterface } }) => {
+        const status = row.original.jsonData?.status?.status || '-';
+        return <StatusLabel status={status} />;
+      },
+    },
+    {
+      header: 'Ready',
+      accessor: 'status.ready',
+      Cell: ({ row }: { row: { original: KubeObjectInterface } }) => {
+        const ready = row.original.jsonData?.status?.ready;
+        if (ready === true) return <span className="text-green-600">true</span>;
+        if (ready === false) return <span className="text-red-600">false</span>;
+        return '-';
+      },
+    },
+    {
+      header: 'Summary',
+      accessor: 'status.summary',
+      Cell: ({ row }: { row: { original: KubeObjectInterface } }) =>
+        row.original.jsonData?.status?.summary || '-',
     },
     {
       header: 'Last Synced',
-      accessorFn: (stack: KubeObjectInterface) => stack.jsonData?.status?.lastSynced || '-',
+      accessor: 'status.lastSynced',
+      Cell: ({ row }: { row: { original: KubeObjectInterface } }) =>
+        row.original.jsonData?.status?.lastSynced || '-',
     },
     {
       header: 'Actions',
-      accessorFn: (stack: KubeObjectInterface) => {
-        const { metadata = {} } = stack.jsonData || {};
-        const name = stack.getName ? stack.getName() : metadata?.name || '-';
-        const namespace = stack.getNamespace ? stack.getNamespace() : metadata?.namespace || '-';
+      id: 'actions',
+      Cell: ({ row }: { row: { original: KubeObjectInterface } }) => {
+        const stack = row.original;
+        const name = stack.getName ? stack.getName() : stack.jsonData?.metadata?.name || '-';
+        const namespace = stack.getNamespace
+          ? stack.getNamespace()
+          : stack.jsonData?.metadata?.namespace || '-';
         return name !== '-' && namespace !== '-' ? (
           <Link routeName="stack" params={{ namespace, name }} tooltip="View stack">
             <span className="px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600">View</span>
@@ -72,15 +115,19 @@ function StackListView() {
       description="List of Astrolabe stacks"
       headerProps={{
         titleSideActions: [
-          <ActionButton
+          <Link
             key="create-stack"
-            description="Create stacks"
-            icon="mdi:plus"
-            onClick={() => {
-              const clusterName = stacks?.[0]?._clusterName || '-';
-              window.location.href = `/c/${clusterName}/astrolabe/create-stack`;
+            routeName="create-stack"
+            params={{
+              cluster: stacks?.[0]?._clusterName || '-',
             }}
-          />,
+            tooltip="Create stacks"
+          >
+            <span className="flex items-center px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600">
+              <span className="mdi mdi-plus mr-1" />
+              Create
+            </span>
+          </Link>,
         ],
       }}
     >

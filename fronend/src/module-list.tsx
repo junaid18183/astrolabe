@@ -100,16 +100,19 @@ function ModuleListView() {
       description="List of Astrolabe modules"
       headerProps={{
         titleSideActions: [
-          <ActionButton
+          <Link
             key="create-modules"
-            description="Create modules"
-            icon="mdi:plus"
-            onClick={() => {
-              // Use the first module's cluster name, or fallback to '-'
-              const clusterName = modules?.[0]?._clusterName || '-';
-              window.location.href = `/c/${clusterName}/astrolabe/create-module`;
+            routeName="create-module"
+            params={{
+              cluster: modules?.[0]?._clusterName || '-',
             }}
-          />,
+            tooltip="Create modules"
+          >
+            <span className="flex items-center px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600">
+              <span className="mdi mdi-plus mr-1" />
+              Create
+            </span>
+          </Link>,
         ],
       }}
     >

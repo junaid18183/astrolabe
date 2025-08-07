@@ -174,19 +174,20 @@ function StackCreateForm() {
                   </Grid>
                   <Grid item xs={12} sm={6}>
                     <TextField
-                      label='Credential Reference'
+                      label="Credential Reference"
                       value={credentialRef || ''}
                       onChange={e => setSecret(e.target.value)}
                       required
                       fullWidth
-                      variant='outlined'
+                      variant="outlined"
                       select
                       helperText={secretError ? 'Error loading secrets' : ''}
                     >
-                      <MenuItem value=''>
+                      <MenuItem value="">
                         <em>None</em>
                       </MenuItem>
-                      {Array.isArray(secrets) && secrets.filter((s: any) => s.metadata?.namespace === namespace).length > 0 ? (
+                      {Array.isArray(secrets) &&
+                      secrets.filter((s: any) => s.metadata?.namespace === namespace).length > 0 ? (
                         secrets
                           .filter((s: any) => s.metadata?.namespace === namespace)
                           .map((s: any) => (
@@ -195,7 +196,7 @@ function StackCreateForm() {
                             </MenuItem>
                           ))
                       ) : (
-                        <MenuItem value=''>No secrets found in this namespace</MenuItem>
+                        <MenuItem value="">No secrets found in this namespace</MenuItem>
                       )}
                     </TextField>
                   </Grid>
@@ -298,8 +299,8 @@ function StackCreateForm() {
                                               input.type === 'number'
                                                 ? 'number'
                                                 : input.type === 'boolean'
-                                                  ? 'text'
-                                                  : 'text'
+                                                ? 'text'
+                                                : 'text'
                                             }
                                             error={
                                               !!mod.variables[input.name] &&
@@ -310,10 +311,10 @@ function StackCreateForm() {
                                             }
                                             helperText={
                                               !!mod.variables[input.name] &&
-                                                !validateVariableValue(
-                                                  input.type,
-                                                  mod.variables[input.name]
-                                                )
+                                              !validateVariableValue(
+                                                input.type,
+                                                mod.variables[input.name]
+                                              )
                                                 ? `Invalid value for type ${input.type}`
                                                 : ''
                                             }
