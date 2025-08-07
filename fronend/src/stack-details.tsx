@@ -50,9 +50,9 @@ function StackDetailsView() {
           rows={
             spec.backendConfig
               ? [
-                { name: 'Type', value: spec.backendConfig.type || '-' },
-                { name: 'Settings', value: JSON.stringify(spec.backendConfig.settings) || '-' },
-              ]
+                  { name: 'Type', value: spec.backendConfig.type || '-' },
+                  { name: 'Settings', value: JSON.stringify(spec.backendConfig.settings) || '-' },
+                ]
               : [{ name: 'No backend config', value: '-' }]
           }
         />
@@ -94,9 +94,9 @@ function StackDetailsView() {
           rows={
             status.outputs
               ? Object.entries(status.outputs).map(([key, value]) => ({
-                name: key,
-                value: JSON.stringify(value),
-              }))
+                  name: key,
+                  value: JSON.stringify(value),
+                }))
               : [{ name: 'No outputs', value: '-' }]
           }
         />

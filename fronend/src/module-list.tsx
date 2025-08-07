@@ -107,7 +107,7 @@ function ModuleListView() {
             onClick={() => {
               // Use the first module's cluster name, or fallback to '-'
               const clusterName = modules?.[0]?._clusterName || '-';
-              window.location.href = `/c/${clusterName}/astrolabe/create-modules`;
+              window.location.href = `/c/${clusterName}/astrolabe/create-module`;
             }}
           />,
         ],

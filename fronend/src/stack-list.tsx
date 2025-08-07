@@ -43,17 +43,7 @@ function StackListView() {
     },
     {
       header: 'Status',
-      accessorFn: (stack: KubeObjectInterface) => {
-        const status = stack.jsonData?.status;
-        const ready =
-          status?.conditions &&
-          status.conditions.some((c: any) => c.type === 'Ready' && c.status === 'True');
-        return (
-          <StatusLabel status={ready ? 'success' : 'warning'}>
-            {ready ? 'Ready' : 'Not Ready'}
-          </StatusLabel>
-        );
-      },
+      accessorFn: (stack: KubeObjectInterface) => stack.jsonData?.status?.status || '-',
     },
     {
       header: 'Last Synced',
@@ -83,12 +73,12 @@ function StackListView() {
       headerProps={{
         titleSideActions: [
           <ActionButton
-            key="create-stacks"
+            key="create-stack"
             description="Create stacks"
             icon="mdi:plus"
             onClick={() => {
               const clusterName = stacks?.[0]?._clusterName || '-';
-              window.location.href = `/c/${clusterName}/astrolabe/create-stacks`;
+              window.location.href = `/c/${clusterName}/astrolabe/create-stack`;
             }}
           />,
         ],

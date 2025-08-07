@@ -5,6 +5,7 @@ import ModuleListView from './module-list';
 import { AstrolabeModuleListView } from './astrolabe';
 import StackDetailsView from './stack-details';
 import StackListView from './stack-list';
+import StackCreateForm from './stack-create';
 
 // Register sidebar and routes
 const sidebarEntries = [
@@ -21,12 +22,6 @@ const sidebarEntries = [
     label: 'Modules',
     url: '/astrolabe/modules',
   },
-  // {
-  //   parent: 'astrolabe',
-  //   name: 'modules-create',
-  //   label: 'CreateModules',
-  //   url: '/astrolabe/create-modules',
-  // },
   {
     parent: 'astrolabe',
     name: 'stacks',
@@ -51,7 +46,7 @@ const routes = [
     component: ModuleListView,
   },
   {
-    path: '/astrolabe/create-modules',
+    path: '/astrolabe/create-module',
     sidebar: 'modules',
     name: 'create-modules',
     exact: true,
@@ -60,7 +55,7 @@ const routes = [
   {
     path: '/astrolabe/modules/:namespace/:name',
     sidebar: 'modules',
-    parent: 'astrolabe/modules',
+    parent: 'astrolabe/module',
     name: 'module',
     exact: true,
     component: ModuleDetailsView,
@@ -79,6 +74,14 @@ const routes = [
     name: 'stack',
     exact: true,
     component: StackDetailsView,
+  },
+  {
+    path: '/astrolabe/create-stack',
+    sidebar: 'stacks',
+    parent: 'astrolabe/stacks',
+    name: 'create-stack',
+    exact: true,
+    component: StackCreateForm,
   },
 ];
 
