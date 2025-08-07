@@ -47,3 +47,10 @@ Below are screenshots of the Astrolabe UI demonstrating various features and vie
 ![Stack Details](images/stack-details.png)
 
 ![Stack Details 2](images/stack-details2.png)
+
+## Module Create
+![Module Create](images/create-module.png)
+
+## Stack Create
+![Stack Create](images/create-stack.png)
+
