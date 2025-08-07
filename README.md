@@ -15,4 +15,35 @@ Fetch the module source (from git or HTTP archive), extract it, and run terrafor
 Update the Module's status with parsed metadata and set various conditions (Ready, SourceHash, etc.).
 Handle errors and update status accordingly.
 Skip processing if the Module is being deleted.
+
 In summary: it keeps the Module status in sync with the actual Terraform module source, parsing and updating metadata when the source changes.
+
+# UI Screenshots
+
+Below are screenshots of the Astrolabe UI demonstrating various features and views:
+
+## Module List
+![Module List](images/module-list.png)
+
+## Module Details
+![Module Details](images/module-details.png)
+
+### Module Details - Inputs
+![Module Details Inputs](images/modle-details-inputs.png)
+
+### Module Details - Outputs
+![Module Details Outputs](images/modle-details-outputs.png)
+
+### Module Details - Requirements
+![Module Details Requirements](images/modle-details-requirements.png)
+
+### Module Details - Resources
+![Module Details Resources](images/modle-details-resources.png)
+
+## Stack List
+![Stack List](images/stack-list.png)
+
+## Stack Details
+![Stack Details](images/stack-details.png)
+
+![Stack Details 2](images/stack-details2.png)
