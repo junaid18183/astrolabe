@@ -19,12 +19,12 @@ function ModuleCreateForm() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const [name, setName] = useState('test-eks-module');
+  const [name, setName] = useState('aws-vpc');
   const [namespace, setNamespace] = useState('default');
   const [namespaces, nsError] = Namespace.useList();
   const [type, setType] = useState('git');
-  const [url, setUrl] = useState('https://github.com/terraform-aws-modules/terraform-aws-eks.git');
-  const [version, setVersion] = useState('v20.37.2');
+  const [url, setUrl] = useState('https://github.com/terraform-aws-modules/terraform-aws-vpc.git');
+  const [version, setVersion] = useState('v5.5.0');
   const typeOptions = [
     { value: 'git', label: 'Git' },
     { value: 'http', label: 'HTTP' },
